@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser"
 import express, { type Express, type Request, type Response } from "express"
 
 import { JSON_BODY_LIMIT } from "./config/constants"
@@ -27,6 +28,8 @@ export function createApp(): Express {
   app.use(corsMiddleware)
   app.use(express.json({ limit: JSON_BODY_LIMIT }))
   app.use(express.urlencoded({ extended: true, limit: JSON_BODY_LIMIT }))
+  // Parses the httpOnly auth cookie into req.cookies (ADR-008).
+  app.use(cookieParser())
   app.use(requestLogger)
 
   // ── Health check (ADR-026) ────────────────────────────────────────────────
