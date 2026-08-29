@@ -22,7 +22,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 |---|---|---|---|---|
 | `PORT` | API listen port | `8080` | No | `server.ts` |
 | `NODE_ENV` | environment mode | `development` / `production` | No | config, cookie flags |
-| `DATABASE_URL` | PostgreSQL connection | `postgresql://user:pass@host:5432/db?schema=public` | **Yes** | Prisma |
+| `DATABASE_URL` | PostgreSQL connection (pooled) | `postgresql://user:pass@host/db?sslmode=require` | **Yes** | Prisma runtime |
+| `DIRECT_URL` | Unpooled connection for `prisma migrate` (ADR-032). Optional — omit if the provider has no separate direct host. | Neon: same host without `-pooler` | **Yes** | Prisma `directUrl` |
 | `JWT_SECRET` | JWT signing secret (≥32 bytes) | `openssl rand -hex 32` output | **Yes** | `TokenService` |
 | `JWT_EXPIRES_IN` | token lifetime | `7d` | No | `TokenService` |
 | `ADMIN_EMAIL` | seed admin email | `admin@example.com` | Low | `prisma/seed.ts` |
@@ -48,7 +49,8 @@ The task-provided variables (`PORT`, `DATABASE_URL`, `JWT_SECRET`, `ADMIN_*`, `G
 PORT=8080
 NODE_ENV=development
 
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/managing_files?schema=public"
+DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
+DIRECT_URL="postgresql://user:password@host/dbname?sslmode=require"
 
 JWT_SECRET=change-me-to-a-long-random-string
 JWT_EXPIRES_IN=7d

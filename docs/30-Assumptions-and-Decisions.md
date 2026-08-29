@@ -331,6 +331,48 @@ Two decisions were made by the human reviewer and are locked:
 | Impact | `config/env.ts`; deployment must set a proper secret. |
 | Priority | P0 |
 
+## ADR-032 — Separate direct URL for migrations (`DIRECT_URL`)
+
+| | |
+|---|---|
+| Ambiguity | `25` documented only `DATABASE_URL`. Managed Postgres providers expose a pooled and an unpooled endpoint. |
+| Decision | Two variables: **`DATABASE_URL`** (pooled, application runtime) and **`DIRECT_URL`** (unpooled, migrations). Prisma's `datasource.directUrl` points at the latter. |
+| Reason | Migrations use advisory locks and long-lived transactions that PgBouncer transaction-mode pooling cannot carry; running `migrate` through the pooled endpoint fails intermittently. Runtime queries still benefit from pooling. |
+| Impact | `prisma/schema.prisma` datasource; `config/env.ts`; `.env` / `.env.example`; `25`; deployment (`24`) must set both. |
+| Priority | P0 |
+
+## ADR-033 — Database host: Neon managed PostgreSQL
+
+| | |
+|---|---|
+| Ambiguity | ADR-001 chose PostgreSQL but not where it runs during development. |
+| Decision | **Neon** managed PostgreSQL (18.6) for both development and production, rather than a local instance. |
+| Reason | Local PostgreSQL credentials were unavailable; Neon requires no local setup, and `24` already required a managed database for production — using it now makes dev and prod identical and removes provisioning work from Phase 13 (OPS-010). |
+| Impact | `DATABASE_URL`/`DIRECT_URL`; `24` deployment; Phase 13 reduced to configuring the existing database. |
+| Priority | P0 |
+| Notes | Free-tier computes suspend after ~5 minutes idle, so the first request after a pause takes a few seconds. A separate Neon **branch** is recommended for production rather than sharing one database with local development. The project also provisions a `neon_auth` schema by default; it is unused by this application and left untouched. |
+
+## ADR-034 — Prisma version pinned to 6.19.3
+
+| | |
+|---|---|
+| Ambiguity | Prisma's `latest` npm tag is `8.0.0-rc.12`, a release candidate; `7.10.0` is stable-latest. |
+| Decision | Pin **`prisma@6.19.3`** and **`@prisma/client@6.19.3`**. |
+| Reason | Never ship a release candidate. Prisma 7 changed generator output paths and config conventions, which would cost debugging time for no assessment benefit. 6.19.3 has the deepest body of working documentation and known-good Neon behaviour. |
+| Impact | `server/package.json`. |
+| Priority | P0 |
+| Known issue | `prisma@6.19.3` pulls `@prisma/config` → `deepmerge-ts@7.1.5`, which carries a **high** advisory (GHSA-ggr8-5vv4-36mx, stack exhaustion on recursive object graphs). It is a **dev-only CLI dependency** — not imported by `@prisma/client` and never present in the deployed runtime. `npm audit fix --force` would downgrade to `prisma@6.12.0`; `prisma@7.10.0` still depends on `deepmerge-ts@7.1.5`, so upgrading does not resolve it. Accepted with rationale; revisit when a patched `@prisma/config` ships. |
+
+## ADR-035 — Project name: Filox
+
+| | |
+|---|---|
+| Ambiguity | The assessment brief calls the system "Managing Your Files", which is a description rather than a product name. |
+| Decision | Product name is **Filox**. The repository and documentation continue to reference the assessment title where they describe the brief. |
+| Reason | Owner's decision. A short distinct name is better for UI branding, page titles, and the README. |
+| Impact | `package.json` names, UI branding (Phase 7+), README, page metadata. Does not change any requirement, endpoint, or data model. |
+| Priority | P0 |
+
 ## Decision summary table
 
 | ADR | Topic | Decision | Priority |
@@ -367,3 +409,7 @@ Two decisions were made by the human reviewer and are locked:
 | 029 | Env loading | Node `--env-file-if-exists`, no dotenv | P0 |
 | 030 | Request logging | local middleware, no morgan | P1 |
 | 031 | JWT_SECRET length | ≥32 chars enforced at boot | P0 |
+| 032 | Migration connection | separate `DIRECT_URL` (unpooled) | P0 |
+| 033 | Database host | Neon managed PostgreSQL 18 | P0 |
+| 034 | Prisma version | pinned 6.19.3 (not 8.x RC) | P0 |
+| 035 | Project name | **Filox** | P0 |

@@ -1,0 +1,137 @@
+// Filox — Prisma schema
+//
+// Implements the data model designed in docs/09-Database-Design.md and
+// diagrammed in docs/10-ERD.md. Field-level rationale lives in those documents;
+// comments here explain only what the schema itself cannot express.
+//
+// Provider: PostgreSQL (ADR-001), hosted on Neon.
+
+datasource db {
+  provider = "postgresql"
+  // Pooled connection (PgBouncer) for application queries.
+  url      = env("DATABASE_URL")
+  // Unpooled connection for migrations: they use advisory locks and long
+  // transactions that transaction-mode pooling cannot carry (ADR-032).
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+/// Role-based access control (AUTH-010, docs/08).
+enum Role {
+  USER
+  ADMIN
+}
+
+/// Outcome of text extraction for an uploaded file (ADR-005, ADR-006).
+/// Extraction failure never fails an upload — the file is stored with FAILED.
+enum ExtractionStatus {
+  PENDING
+  DONE
+  SKIPPED
+  FAILED
+}
+
+/// Coarse grouping used for filtering and statistics (ADR-024, docs/21).
+enum FileCategory {
+  DOCUMENT
+  IMAGE
+  TEXT
+  OTHER
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id       String @id @default(cuid())
+  name     String
+  /// Login identity. Stored lowercased; uniqueness is enforced by the database
+  /// so duplicate registration fails even under concurrent requests.
+  email    String @unique
+  /// bcrypt hash, cost 12 (ADR-018). Never returned by the API.
+  password String
+
+  role            Role    @default(USER)
+  /// Gates login (AUTH-006): unverified accounts cannot authenticate.
+  isEmailVerified Boolean @default(false)
+  /// Bumped to invalidate already-issued JWTs on role change or deletion
+  /// (AUTH-013, ADR-007).
+  tokenVersion    Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  files             File[]
+  verificationCodes VerificationCode[]
+
+  @@index([role])
+  @@index([createdAt])
+}
+
+model VerificationCode {
+  id     String @id @default(cuid())
+  userId String
+
+  /// bcrypt hash of the 6-digit OTP (ADR-010). Plaintext exists only in the
+  /// outbound email — there is deliberately no column for it.
+  codeHash  String
+  /// now() + OTP_TTL_MINUTES. Expiry is checked at read time; no cleanup job.
+  expiresAt DateTime
+  /// Incremented on each failed verification; blocks after 5 (ADR-010).
+  attempts  Int       @default(0)
+  /// Set when successfully used, which prevents reuse. Null while active.
+  consumedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  // Serves the resend cooldown and hourly-cap window queries.
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+model File {
+  id      String @id @default(cuid())
+  /// Ownership is the authorization boundary: a user may only read or delete
+  /// files where ownerId matches their own id (FILE-015, docs/08).
+  ownerId String
+
+  /// Sanitised display name (ADR-016). Never used to build a filesystem path.
+  originalName String
+  /// Opaque on-disk name, `<uuid>.<ext>`. Unique to prevent blob collisions.
+  storageKey   String       @unique
+  /// MIME type verified by magic-byte sniff, not just the client's claim.
+  mimeType     String
+  category     FileCategory @default(OTHER)
+  extension    String
+  /// Bytes. Int is sufficient at a 10 MB per-file cap (ADR-002).
+  size         Int
+  /// SHA-256 hex. Stored for future deduplication; not enforced (ADR-015).
+  checksum     String
+
+  /// Extracted text, truncated to 20 000 characters (ADR-005). Null for images
+  /// and for failed extractions.
+  extractedContent String?          @db.Text
+  extractionStatus ExtractionStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  // Default sort within a user's own file list.
+  @@index([ownerId, createdAt])
+  // Category filter within a user's own file list.
+  @@index([ownerId, category])
+  // Admin "recent uploads" and global sorting (STAT-003).
+  @@index([createdAt])
+  // Admin file-type distribution aggregation (STAT-003).
+  @@index([category])
+}

@@ -15,7 +15,14 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8080),
 
   // ── Database (consumed from Phase 3) ────────────────────────────────────
+  /** Pooled connection used by the application at runtime. */
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  /**
+   * Unpooled connection used by `prisma migrate` (ADR-032). Migrations rely on
+   * advisory locks and long transactions that transaction-mode pooling breaks.
+   * Falls back to DATABASE_URL when the provider has no separate direct host.
+   */
+  DIRECT_URL: z.string().min(1).optional(),
 
   // ── Auth / JWT (consumed from Phase 4) ──────────────────────────────────
   // 32-char minimum: docs/25 recommends >=32 bytes; enforcing it at boot turns

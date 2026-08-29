@@ -1,15 +1,16 @@
-# Documentation Index — Managing Your Files
+# Documentation Index â€” Managing Your Files
 
-Single source of truth for the **Managing Your Files** full-stack assessment.
+Single source of truth for **Filox** — the "Managing Your Files" full-stack assessment (ADR-035).
 No application code lives in this directory. Implementation follows `27-Development-Phases.md` and `32-Implementation-Plan.md`.
 
 ## Project identity
 
 | Attribute | Value |
 |---|---|
-| Project name | Managing Your Files |
+| Product name | **Filox** |
+| Assessment title | Managing Your Files |
 | Repository layout | `client/` (Next.js) + `server/` (Express) + `docs/` |
-| Assessment budget | 8–10 hours focused work |
+| Assessment budget | 8â€“10 hours focused work |
 | Submission deadline | 10 days from assignment receipt |
 | Author | Mohand Hatem |
 
@@ -17,7 +18,7 @@ No application code lives in this directory. Implementation follows `27-Developm
 
 | Order | Purpose | Files |
 |---|---|---|
-| 0 | **Read first — implementation governance** | `PROJECT-RULES.md` |
+| 0 | **Read first â€” implementation governance** | `PROJECT-RULES.md` |
 | 1 | Understand scope and decisions | `30`, `01`, `02` |
 | 2 | Understand the data and contract | `09`, `10`, `11` |
 | 3 | Understand the mechanics | `12`, `13`, `18`, `19`, `20`, `21` |
@@ -40,7 +41,7 @@ No application code lives in this directory. Implementation follows `27-Developm
 | `09-Database-Design.md` | Database Design | Fields, constraints, indexes, rationale |
 | `10-ERD.md` | ERD | Mermaid ERD + relationship explanations |
 | `11-API-Specification.md` | API Specification | **Canonical REST contract** |
-| `12-Authentication-Flow.md` | Authentication Flow | Registration → OTP → JWT → RBAC |
+| `12-Authentication-Flow.md` | Authentication Flow | Registration â†’ OTP â†’ JWT â†’ RBAC |
 | `13-File-Upload-Architecture.md` | File Upload Architecture | Upload pipeline and extraction |
 | `14-Frontend-Architecture.md` | Frontend Architecture | App Router design, RSC/CSC split |
 | `15-Backend-Architecture.md` | Backend Architecture | Modular monolith layers |
@@ -59,12 +60,12 @@ No application code lives in this directory. Implementation follows `27-Developm
 | `28-Acceptance-Criteria.md` | Acceptance Criteria | Given/When/Then per P0 |
 | `29-Edge-Cases.md` | Edge Cases | Expected behaviour catalogue |
 | `30-Assumptions-and-Decisions.md` | Assumptions & Decisions | **Canonical decision log (ADR-xxx)** |
-| `31-Requirements-Traceability-Matrix.md` | Traceability Matrix | Company requirement → artefacts |
+| `31-Requirements-Traceability-Matrix.md` | Traceability Matrix | Company requirement â†’ artefacts |
 | `32-Implementation-Plan.md` | Implementation Plan | Ordered build blueprint |
 | `33-Definition-of-Done.md` | Definition of Done | Completion gates |
 | `34-README.md` | README Specification | Spec for the root `README.md` |
 | `35-Final-Submission-Checklist.md` | Submission Checklist | Pre-submit verification |
-| `PROJECT-RULES.md` | Project Rules | **Binding implementation governance** — approval gates, anti-overengineering, protocol |
+| `PROJECT-RULES.md` | Project Rules | **Binding implementation governance** â€” approval gates, anti-overengineering, protocol |
 
 ## Authority rules
 
@@ -72,11 +73,11 @@ No application code lives in this directory. Implementation follows `27-Developm
 
 For **content** disagreements between documents, the higher authority wins:
 
-1. `30-Assumptions-and-Decisions.md` — decisions (ADR IDs)
-2. `11-API-Specification.md` — API contract shapes
-3. `09-Database-Design.md` — data model
-4. `02-SRS.md` — requirement IDs and priorities
-5. Everything else — derived detail
+1. `30-Assumptions-and-Decisions.md` â€” decisions (ADR IDs)
+2. `11-API-Specification.md` â€” API contract shapes
+3. `09-Database-Design.md` â€” data model
+4. `02-SRS.md` â€” requirement IDs and priorities
+5. Everything else â€” derived detail
 
 ## ID conventions
 

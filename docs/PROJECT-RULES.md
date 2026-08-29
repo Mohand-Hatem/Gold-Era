@@ -1,6 +1,8 @@
-# PROJECT RULES — Managing Your Files
+# PROJECT RULES — Filox (Managing Your Files)
 
 **Status:** Active · **Scope:** governs the entire implementation phase · **Authority:** binding on every implementation step.
+
+> **Product name: Filox** (ADR-035). "Managing Your Files" remains the assessment title used when referring to the company brief.
 
 This document is the permanent implementation governance contract. Once implementation begins, every step must follow it. It cannot be bypassed for convenience or speed.
 
@@ -24,7 +26,7 @@ PHASE START REVIEW GATE   (present phase definition from `27` → approval)
 
 ### Purpose
 
-Build **Managing Your Files** — a full-stack file management system where authenticated users upload and manage their own files, and administrators manage all users and files and monitor system usage.
+Build **Filox** — a full-stack file management system where authenticated users upload and manage their own files, and administrators manage all users and files and monitor system usage. Delivered against the company's "Managing Your Files" assessment brief.
 
 ### Company assessment
 
