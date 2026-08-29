@@ -23,10 +23,12 @@ Work top to bottom. Do not start a step until its prerequisites pass verificatio
 
 - **Objective:** shared infra + error/validation + CORS + health.
 - **Prereq:** Step 1.
-- **Create:** `config/env.ts,prisma.ts,cors.ts,constants.ts`; `utils/response.ts,AppError.ts,asyncHandler.ts`; `middleware/errorHandler.ts,notFound.ts,validate.ts`; wire in `app.ts`; `/health`.
-- **Deps:** zod, cors, cookie-parser, @prisma/client, prisma(dev), morgan(P1).
-- **DB:** none. **APIs:** GET /health.
-- **Verify:** unknown route → 404 envelope; `/health` → ok; CORS reflects FRONTEND_URL with credentials.
+- **Create:** `config/env.ts,cors.ts,constants.ts`; `utils/response.ts,AppError.ts,asyncHandler.ts`; `middleware/errorHandler.ts,notFound.ts,validate.ts,requestLogger.ts`; wire in `app.ts`; `/health`.
+- **Deps:** zod@4.5.2, cors@2.8.6, @types/cors@2.8.19.
+- **DB:** none — `config/prisma.ts` moves to Step 3 (DB-001b). **APIs:** GET /health.
+- **Verify:** unknown route → 404 envelope; `/health` → ok; CORS reflects FRONTEND_URL with credentials and withholds Allow-Origin from others; missing/short `JWT_SECRET` exits 1; oversized body → 413; malformed JSON → 400.
+
+  > Notes from execution: env files load via Node's native `--env-file-if-exists` (no `dotenv` dependency). `cookie-parser` deferred to Step 5 where cookies are first read. Logging is a local middleware, not `morgan`.
 
 ## Step 3 — Database (Phase 3)
 

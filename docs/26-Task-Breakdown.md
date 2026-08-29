@@ -15,8 +15,8 @@ Engineering backlog. Each task: **ID · Phase · Area · Priority · Name · Des
 
 | ID | Area | Pri | Task | Depends | Files | Acceptance |
 |---|---|---|---|---|---|---|
-| BE-001 | BE | P0 | env config (Zod, fail-fast) | BE-000 | `config/env.ts` | missing var crashes |
-| BE-002 | BE | P0 | Prisma client singleton + CORS(credentialed) + JSON/body limits | BE-001 | `config/prisma.ts`,`config/cors.ts` | CORS allows FRONTEND_URL w/ credentials |
+| BE-001 | BE | P0 | env config (Zod, fail-fast) | BE-000 | `config/env.ts`,`config/constants.ts` | missing var crashes |
+| BE-002 | BE | P0 | credentialed CORS + JSON/body limits | BE-001 | `config/cors.ts` | CORS allows FRONTEND_URL w/ credentials |
 | BE-003 | BE | P0 | response envelope + AppError + asyncHandler | BE-000 | `utils/*` | helpers unit-usable |
 | BE-004 | BE | P0 | errorHandler + notFound middleware | BE-003 | `middleware/*` | unknown route → 404 envelope |
 | BE-005 | BE | P0 | validate(zod) middleware | BE-003 | `middleware/validate.ts` | bad body → 400 details |
@@ -27,6 +27,7 @@ Engineering backlog. Each task: **ID · Phase · Area · Priority · Name · Des
 | ID | Area | Pri | Task | Depends | Files | Acceptance |
 |---|---|---|---|---|---|---|
 | DB-001 | DB | P0 | schema.prisma: User, VerificationCode, File + enums | BE-002 | `prisma/schema.prisma` | matches `09` |
+| DB-001b | DB | P0 | Prisma client singleton (moved from BE-002 — `@prisma/client` cannot be imported before the schema exists) | DB-001 | `config/prisma.ts` | singleton importable; one instance |
 | DB-002 | DB | P0 | indexes + constraints + cascade | DB-001 | schema | unique email/storageKey; cascades |
 | DB-003 | DB | P0 | initial migration | DB-002 | `prisma/migrations` | `migrate dev` clean |
 | DB-004 | DB | P0 | admin seed (idempotent) | DB-003 | `prisma/seed.ts` | admin upserted, verified |

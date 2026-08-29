@@ -291,6 +291,46 @@ Two decisions were made by the human reviewer and are locked:
 | Priority | P0 |
 | Note | The company sample paths omit `/api`; this prefix is an assumption and is reflected consistently in `11`. |
 
+## ADR-028 — JSON body size limit
+
+| | |
+|---|---|
+| Ambiguity | `20` requires a body size limit; no value specified. |
+| Decision | **100 KB** for `express.json()` and `express.urlencoded()`. Multipart uploads are unaffected and bound by Multer instead (10 MB/file, 50 MB/request — ADR-002). |
+| Reason | Every documented JSON body is small (register, login, OTP, role patch). A tight limit minimises the DoS surface at no functional cost. |
+| Impact | `config/constants.ts` `JSON_BODY_LIMIT`; `app.ts`; oversized body → 413 `ERR_FILE_TOO_LARGE`. |
+| Priority | P0 |
+
+## ADR-029 — Env file loading without `dotenv`
+
+| | |
+|---|---|
+| Ambiguity | How `.env` reaches `process.env` in dev and production. |
+| Decision | Node's native **`--env-file-if-exists=.env`** flag in the `dev` and `start` scripts. No `dotenv` dependency. |
+| Reason | Node 20+ loads env files natively; adding `dotenv` would be an unnecessary dependency. `-if-exists` keeps production working where the platform injects env vars directly and no `.env` file is present. |
+| Impact | `server/package.json` scripts. |
+| Priority | P0 |
+
+## ADR-030 — Request logging without `morgan`
+
+| | |
+|---|---|
+| Ambiguity | `32` originally listed `morgan` for request logging (P1). |
+| Decision | A **~15-line local middleware** logging exactly `method path status duration`. No `morgan`. |
+| Reason | NFR-011 asks for those four fields; a dependency is not justified for that, and it lets us guarantee no bodies, headers, or cookies are ever logged (`20` §7). |
+| Impact | `middleware/requestLogger.ts`. |
+| Priority | P1 |
+
+## ADR-031 — `JWT_SECRET` minimum length enforced at boot
+
+| | |
+|---|---|
+| Ambiguity | `25` recommends "≥32 bytes" but nothing enforced it. |
+| Decision | `env.ts` requires **≥32 characters**; the process exits if shorter. |
+| Reason | Converts a documentation recommendation into a guarantee, and prevents a weak signing key from reaching production. |
+| Impact | `config/env.ts`; deployment must set a proper secret. |
+| Priority | P0 |
+
 ## Decision summary table
 
 | ADR | Topic | Decision | Priority |
@@ -323,3 +363,7 @@ Two decisions were made by the human reviewer and are locked:
 | 025 | Response envelope | success/data/meta / error | P0 |
 | 026 | Health | GET /health | P1 |
 | 027 | API prefix | /api | P0 |
+| 028 | JSON body limit | 100 KB | P0 |
+| 029 | Env loading | Node `--env-file-if-exists`, no dotenv | P0 |
+| 030 | Request logging | local middleware, no morgan | P1 |
+| 031 | JWT_SECRET length | ≥32 chars enforced at boot | P0 |

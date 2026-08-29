@@ -79,9 +79,11 @@ flowchart TD
 ## Phase 2 — Backend Foundation · BE · 30m · P0
 
 - Goal: shared infrastructure.
-- Steps: [BE] env.ts (Zod fail-fast); [BE] Prisma singleton; [BE] credentialed CORS + body limits; [BE] response/AppError/asyncHandler; [BE] errorHandler+notFound; [BE] validate middleware; [BE,P1] requestLogger + `/health`.
+- Steps: [BE] env.ts + constants.ts (Zod fail-fast); [BE] credentialed CORS + body limits; [BE] response/AppError/asyncHandler; [BE] errorHandler+notFound; [BE] validate middleware; [BE,P1] requestLogger + `/health`.
 - APIs: `/health`. DB: none. Tests: manual `/health`.
 - DoD: unknown route → 404 envelope; `/health` ok; CORS permits FRONTEND_URL with credentials. (BE-001..006)
+
+> **Deviation recorded (Phase 2 execution).** The Prisma client singleton originally listed in BE-002 moved to Phase 3 as **DB-001b**: `@prisma/client` cannot be imported before a schema exists to generate it from, so keeping it here would prevent the server from booting. Everything else in BE-002 stayed. Body limit fixed at **100 KB** for JSON/urlencoded (multipart uploads use Multer limits instead). Request logging is a ~15-line local middleware rather than `morgan`, per the anti-overengineering rule on unnecessary dependencies.
 
 ## Phase 3 — Database · DB · 25m · P0
 
