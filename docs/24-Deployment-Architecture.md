@@ -1,6 +1,6 @@
 # 24 — Deployment Architecture
 
-Realistic deployment for the assessment. Decisions: ADR-004 (storage/ephemeral), ADR-008 (cross-origin cookies), ADR-019 (seed).
+Realistic deployment for the assessment. Decisions: ADR-039 (Cloudinary storage), ADR-033 (Neon), ADR-008 (cross-origin cookies), ADR-019 (seed).
 
 ## 1. Topology
 
@@ -8,8 +8,8 @@ Realistic deployment for the assessment. Decisions: ADR-004 (storage/ephemeral),
 flowchart LR
   U[Browser] -->|HTTPS| V[Vercel: Next.js frontend]
   V -->|HTTPS + credentials| B[Render/Railway/Fly: Express API /api]
-  B --> DB[(Managed PostgreSQL: Neon/Supabase/Render)]
-  B --> FS[Local disk uploads/ ephemeral]
+  B --> DB[(Managed PostgreSQL: Neon)]
+  B --> CL[Cloudinary: blob storage, authenticated]
   B --> SMTP[Gmail SMTP]
 ```
 
@@ -17,7 +17,8 @@ flowchart LR
 |---|---|---|
 | Frontend | **Vercel** | Next.js App Router native. |
 | Backend | **Render** (or Railway/Fly) | Node web service. |
-| Database | **Neon** / Supabase / Render PostgreSQL | managed, free tier. |
+| Database | **Neon** managed PostgreSQL 18 (ADR-033) | managed, free tier. |
+| Blob storage | **Cloudinary** (ADR-039) | 25 GB free tier; survives redeploys. |
 | Email | Gmail SMTP (app password) | per provided env. |
 
 ## 2. Environments
@@ -65,14 +66,16 @@ Set `NEXT_PUBLIC_API_URL` to the backend origin (no trailing `/api`; client appe
 
 See `25` for full table. Production must set:
 
-- Backend: `PORT`, `DATABASE_URL`, `JWT_SECRET`, `ADMIN_*`, `GMAIL_*`, `FRONTEND_URL`, `NODE_ENV=production`, `COOKIE_SECURE=true`, `COOKIE_SAMESITE=none`.
+- Backend: `PORT`, `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `ADMIN_*`, `GMAIL_*`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `FRONTEND_URL`, `NODE_ENV=production`, `COOKIE_SECURE=true`, `COOKIE_SAMESITE=none`.
 - Frontend: `NEXT_PUBLIC_API_URL`.
 
-## 6. Storage in production (ADR-004 risk)
+## 6. Storage in production (ADR-039)
 
-- Local disk on free dynos is **ephemeral**: uploads are lost on redeploy/restart.
-- Documented clearly in README. Upgrade paths (P1): platform persistent disk, or object storage (S3/Cloudflare R2) behind `StorageService`.
-- For demo, note this limitation; re-upload after redeploy if needed.
+- Blobs live in **Cloudinary**, not on the dyno filesystem, so uploads survive redeploys and restarts. The ephemeral-disk problem that the original local-disk design carried no longer applies.
+- Required env vars: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (see `25`).
+- Uploads are `type: "authenticated"`; raw Cloudinary URLs are never returned by the API. All reads go through `GET /files/:id/download` behind `authenticate` + ownership.
+- Free tier is 25 GB storage / 25 GB monthly bandwidth — ample for the assessment.
+- Deleting a file or a user removes the corresponding Cloudinary assets via `StorageService`, so the account does not accumulate orphans.
 
 ## 7. Database migrations
 
@@ -100,7 +103,7 @@ Migrations committed to `server/prisma/migrations/`.
 - [ ] `migrate deploy` + `db seed` run on release.
 - [ ] `NEXT_PUBLIC_API_URL` set on Vercel.
 - [ ] Gmail app password valid (or accept console fallback disabled in prod).
-- [ ] uploads directory writable; ephemeral-disk caveat documented.
+- [ ] `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` set; a test upload succeeds and survives a redeploy.
 
 ## 10. Docker (P2)
 

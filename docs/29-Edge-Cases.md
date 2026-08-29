@@ -102,7 +102,7 @@ Comprehensive edge-case catalogue with expected system behaviour. IDs `EC-nnn`. 
 | EC-090 | Missing critical env var at boot | Server fails fast with clear message (`25`). |
 | EC-091 | SMTP unavailable | OTP send logged/failed; dev console fallback; user can resend. |
 | EC-092 | DB connection lost | 500 `ERR_INTERNAL`; no crash loop; logged. |
-| EC-093 | Ephemeral disk wiped on redeploy | Metadata rows remain but blobs gone → download 404/500 handled gracefully; documented risk (ADR-004). |
+| EC-093 | Blob missing from storage provider (deleted out-of-band) | Metadata row remains; download returns 404 handled gracefully. Redeploys no longer destroy blobs (ADR-039). |
 | EC-094 | CORS origin mismatch | Browser blocks; documented exact-origin config (`24`). |
 | EC-095 | Unknown route | 404 `ERR_NOT_FOUND` envelope. |
 | EC-096 | Unhandled exception | Central errorHandler → 500; process stays up. |

@@ -49,7 +49,7 @@ Engineering backlog. Each task: **ID · Phase · Area · Priority · Name · Des
 
 | ID | Area | Pri | Task | Depends | Files | Acceptance |
 |---|---|---|---|---|---|---|
-| BE-020 | BE | P0 | StorageService (disk, uuid, remove) | BE-001 | `services/storage.service.ts` | write/read/remove |
+| BE-020 | BE | P0 | StorageService (Cloudinary upload/stream/remove, ADR-039) | BE-001 | `services/storage.service.ts`,`config/cloudinary.ts` | upload/stream/remove |
 | BE-021 | BE | P0 | upload middleware (multer memory+limits+fileFilter) | BE-020 | `middleware/upload.ts` | size/count/type enforced |
 | BE-022 | BE | P0 | ExtractionService (txt/json/pdf/docx) | BE-001 | `services/extraction.service.ts` | text extracted; failure safe |
 | BE-023 | BE | P0 | files module: upload (validate+store+extract+persist) | BE-020..022 | `modules/files/*` | 201 uploaded/failed |

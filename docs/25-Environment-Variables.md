@@ -31,12 +31,15 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 | `ADMIN_PASSWORD` | seed admin password | `Admin123` | **Yes** | seed |
 | `GMAIL_USER` | SMTP sender address | `you@gmail.com` | Low | `MailService` |
 | `GMAIL_PASS` | Gmail **app password** | 16-char app password | **Yes** | `MailService` |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary account cloud name (ADR-039) | `dxxxxxxxx` | Low | `config/cloudinary.ts` |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | 15-digit number | **Yes** | `config/cloudinary.ts` |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | 27-char string | **Yes** | `config/cloudinary.ts` |
 | `FRONTEND_URL` | CORS origin allow-list + cookie context | `http://localhost:3000` / `https://app.vercel.app` | No | `config/cors.ts` |
 | `COOKIE_SECURE` | force Secure cookie | `false` (dev) / `true` (prod) | No | cookie options |
 | `COOKIE_SAMESITE` | cookie SameSite | `lax` (dev) / `none` (prod) | No | cookie options |
 | `MAX_FILE_SIZE_MB` | per-file size cap (ADR-002) | `10` | No | upload/multer |
 | `MAX_FILES_PER_UPLOAD` | batch cap | `5` | No | upload |
-| `UPLOAD_DIR` | storage directory | `uploads` | No | `StorageService` |
+| `CLOUDINARY_FOLDER` | Folder prefix for uploaded assets | `filox` | No | `StorageService` |
 | `OTP_TTL_MINUTES` | OTP expiry (ADR-010) | `10` | No | `OtpService` |
 | `RATE_LIMIT_WINDOW_MS` | rate-limit window (P1) | `900000` | No | rateLimit |
 | `RATE_LIMIT_MAX` | max requests/window (P1) | `100` | No | rateLimit |
@@ -62,13 +65,17 @@ ADMIN_PASSWORD=Admin123
 GMAIL_USER=
 GMAIL_PASS=
 
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+CLOUDINARY_FOLDER=filox
+
 FRONTEND_URL=http://localhost:3000
 COOKIE_SECURE=false
 COOKIE_SAMESITE=lax
 
 MAX_FILE_SIZE_MB=10
 MAX_FILES_PER_UPLOAD=5
-UPLOAD_DIR=uploads
 OTP_TTL_MINUTES=10
 ```
 

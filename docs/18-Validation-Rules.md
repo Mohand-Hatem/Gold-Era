@@ -27,6 +27,7 @@ Sort whitelists: files `[createdAt, size, originalName]`; users `[createdAt, nam
 | Check | FE | BE |
 |---|---|---|
 | Count ≤ 5 | ✅ | ✅ (Multer `files:5`) |
+| Size ≥ 1 byte (reject empty) | ✅ | ✅ (ADR-042) |
 | Size ≤ 10MB/file | ✅ | ✅ (Multer `fileSize`) |
 | Total ≤ 50MB | ✅ (sum) | ✅ |
 | Extension in allow-list | ✅ | ✅ |

@@ -47,16 +47,16 @@ Two decisions were made by the human reviewer and are locked:
 | Impact | Multer `fileFilter`, validation service, error `ERR_UNSUPPORTED_TYPE`. |
 | Priority | P0 |
 
-## ADR-004 — Storage strategy
+## ADR-004 — Storage strategy *(superseded by ADR-039)*
 
 | | |
 |---|---|
 | Ambiguity | Storage location unspecified. |
-| Decision | **Local disk** at `server/uploads/` in MVP, accessed only through a `StorageService` abstraction. Stored filename is a generated UUID; original name kept in DB. |
-| Reason | Zero external setup for an 8–10h build. Abstraction allows a later swap to S3/R2 without touching controllers. |
-| Impact | `StorageService`, file download/stream route, deployment note (see risk below). |
+| Original decision | **Local disk** at `server/uploads/` in MVP, accessed only through a `StorageService` abstraction. Stored filename a generated UUID; original name kept in DB. |
+| Reason | Zero external setup for an 8–10h build. Abstraction allows a later swap without touching controllers. |
+| Status | **Superseded during Phase 5 by ADR-039 (Cloudinary).** The `StorageService` abstraction this ADR introduced is what made the swap a one-file change — it did its job. |
+| Retained | Opaque generated storage key, never the client filename (ADR-016); all blob access through authorized routes. |
 | Priority | P0 |
-| Risk | Render/Railway/Fly free dynos have **ephemeral** disk — uploaded files vanish on redeploy. Documented in `24` and README. Persistent-disk or object storage is the P1 upgrade. |
 
 ## ADR-005 — Content extraction scope
 
@@ -404,6 +404,60 @@ Two decisions were made by the human reviewer and are locked:
 | Impact | `auth.repository.consumeAllActiveCodes`; `VerificationCode` rows accumulate (bounded by the resend cap and removed by user-delete cascade). |
 | Priority | P0 |
 
+## ADR-039 — Storage provider: Cloudinary (supersedes ADR-004)
+
+| | |
+|---|---|
+| Ambiguity | ADR-004 accepted local-disk storage knowing free dynos have ephemeral disk, i.e. uploads disappear on every redeploy. |
+| Decision | Blobs are stored in **Cloudinary** (`cloudinary@2.11.0`), reached only through the existing `StorageService`. `File.storageKey` holds the Cloudinary `public_id`. |
+| Reason | Removes the single worst known risk in the project: uploaded files surviving a redeploy. A demo where files vanish is worse than one with fewer features. Free tier (25 GB) is ample, the SDK is CommonJS so the module system is unaffected, and ADR-004's abstraction means only `StorageService` changes. |
+| Impact | New `cloudinary` dependency; `StorageService` upload/stream/destroy; `config/cloudinary.ts`; `CLOUDINARY_*` env vars (`25`); `13` pipeline; `24` deployment (ephemeral-disk section removed); `01` §17 limitations. |
+| Priority | P0 |
+
+### Why not `multer-storage-cloudinary`
+
+Rejected for two independent reasons:
+
+1. **It inverts the security model.** That storage engine streams each file to Cloudinary *during multipart parsing*, before application code runs. Every control in `13` and `20` §5 — extension, declared MIME, and magic-byte agreement — depends on inspecting the buffer **before** it is persisted. With that package a MIME-spoofed executable would already be in the account before `fileFilter` could reject it.
+2. **It is unmaintained.** Last published June 2022, written for multer 1.x; the project uses multer 2.3.0.
+
+`multer.memoryStorage()` is retained so validation and extraction both operate on the in-memory buffer, and only the storage destination changes.
+
+### Access control
+
+Uploads use Cloudinary `type: "authenticated"`, and raw Cloudinary URLs are **never** returned by the API. Downloads and previews continue to flow through `GET /files/:id/download`, where `authenticate` plus the ownership check run first. Returning a public URL would silently defeat FILE-015 by making any blob readable by anyone holding the link.
+
+## ADR-040 — Module system stays CommonJS; ESM-only libraries pinned to CJS majors
+
+| | |
+|---|---|
+| Ambiguity | `file-type@22` and `pdf-parse@2` are pure ESM; the backend is CommonJS (`tsconfig` `"module": "commonjs"`). |
+| Decision | **Remain CommonJS.** Pin **`file-type@16.5.4`** and **`pdf-parse@1.1.4`**, the last CJS majors. |
+| Reason | Converting to ESM means adding explicit `.js` extensions to roughly 70 relative imports across 26 verified files, moving to `nodenext`, and losing `__dirname` — 30–45 minutes of mechanical change with real regression risk, in a project already over its time budget. The entire benefit is newer majors of one library. `file-type@16` detects all ten allowed types; magic-byte signatures for PNG/JPEG/WebP/PDF/DOCX have been stable for over a decade. `mammoth` is CommonJS either way. |
+| Impact | `package.json` version pins. |
+| Priority | P0 |
+| Revisit | An ESM migration is reasonable **after** all P0 features work, as a separate commit where a mistake costs nothing. |
+
+## ADR-041 — `uuid` dependency dropped
+
+| | |
+|---|---|
+| Ambiguity | `32` Step 6 listed `uuid` as a dependency for generating storage keys. |
+| Decision | Use Node's built-in **`crypto.randomUUID()`**. No `uuid` package. |
+| Reason | Available natively since Node 14.17; the project requires Node 20+. An external dependency for one function call is unjustified (anti-overengineering rule 11). |
+| Impact | `32` Step 6 dependency list corrected. |
+| Priority | P0 |
+
+## ADR-042 — Zero-byte uploads rejected
+
+| | |
+|---|---|
+| Ambiguity | `29` EC-059 says reject empty files, but no ADR stated it and `18` lists no minimum size. |
+| Decision | Files of **0 bytes are rejected** with `ERR_VALIDATION` and reported in the upload response's `failed[]`. |
+| Reason | An empty file has no content to extract and no value to store; it would appear as a 0 B row with null extracted content. Confirms EC-059. |
+| Impact | Upload validation in `files.service`; `18` gains a minimum-size rule. |
+| Priority | P0 |
+
 ## Decision summary table
 
 | ADR | Topic | Decision | Priority |
@@ -411,7 +465,7 @@ Two decisions were made by the human reviewer and are locked:
 | 001 | Database | PostgreSQL 16 | P0 |
 | 002 | File/batch size | 10MB / 5 files / 50MB | P0 |
 | 003 | Allowed types | txt md csv json pdf docx png jpg jpeg webp | P0 |
-| 004 | Storage | Local disk via StorageService | P0 |
+| 004 | Storage | ~~Local disk via StorageService~~ → superseded by 039 | P0 |
 | 005 | Extraction scope | text/json/pdf/docx; images none; 20k cap | P0/P1 |
 | 006 | Extraction failure | Never fails upload; status FAILED | P0 |
 | 007 | JWT | HS256, 7d, {sub,role,tokenVersion} | P0 |
@@ -447,3 +501,7 @@ Two decisions were made by the human reviewer and are locked:
 | 036 | Logout auth level | public + idempotent | P0 |
 | 037 | Auth rate limit | 20 per IP / 15 min | P1 |
 | 038 | Superseded OTPs | consumed, not deleted | P0 |
+| 039 | **Storage provider** | **Cloudinary via StorageService** (supersedes 004) | P0 |
+| 040 | Module system | CommonJS; file-type@16, pdf-parse@1 | P0 |
+| 041 | UUID generation | built-in `crypto.randomUUID()` | P0 |
+| 042 | Zero-byte files | rejected | P0 |

@@ -55,10 +55,10 @@ How to run backend tests (`npm test`) and what is covered (T0 flows).
 Frontend (Vercel) + backend (Render/Railway/Fly) + managed PostgreSQL. Include the release commands (`migrate deploy` + `seed`) and required prod env (cookie flags, CORS origin). Link `docs/24`.
 
 ### 16. Assumptions
-Short list linking to `docs/30`: file limits, allowed types, extraction scope, OTP policy, token lifetime, hard delete + cascade, local ephemeral storage, `/api` prefix, Recharts, cookie auth.
+Short list linking to `docs/30`: file limits, allowed types, extraction scope, OTP policy, token lifetime, hard delete + cascade, Cloudinary blob storage, `/api` prefix, Recharts, cookie auth.
 
 ### 17. Trade-offs & limitations
-- Local disk storage is ephemeral on free dynos (uploads lost on redeploy) — upgrade path to object storage.
+- Blobs are stored in Cloudinary (`type: authenticated`), so raw provider URLs are never exposed and all reads go through an authorized endpoint. Requires a Cloudinary account.
 - No image OCR (P3).
 - Client-side data fetching (auth cookie) rather than server components for user data.
 - Refresh tokens not implemented (7-day access token).

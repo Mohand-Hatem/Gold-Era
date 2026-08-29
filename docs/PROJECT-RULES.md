@@ -147,7 +147,7 @@ If a more advanced approach is technically interesting but unnecessary for the a
 
 ### Already-applied anti-overengineering decisions
 
-These are locked and must not be reversed without approval: no Redux (React Query + local state + Context only); no microservices (modular monolith); no refresh tokens in MVP (ADR-022); no message queues or background workers (extraction is inline and bounded); offset pagination not cursor (ADR-012); local disk storage behind a thin `StorageService` rather than premature cloud integration (ADR-004); no materialised views or caching for statistics (`21`); no OCR (ADR-005).
+These are locked and must not be reversed without approval: no Redux (React Query + local state + Context only); no microservices (modular monolith); no refresh tokens in MVP (ADR-022); no message queues or background workers (extraction is inline and bounded); offset pagination not cursor (ADR-012); blob storage behind a thin `StorageService` — Cloudinary, no `multer-storage-cloudinary` because it would store files before validation runs (ADR-039); CommonJS module system, ESM deferred until after P0 (ADR-040); no materialised views or caching for statistics (`21`); no OCR (ADR-005).
 
 ---
 
@@ -641,6 +641,7 @@ Dependencies and per-phase detail: `27`. Step-level instructions: `32`.
 | Max files per upload | 5 | ADR-002 |
 | Max request size | 50 MB | ADR-002 |
 | Allowed types | txt, md, csv, json, pdf, docx, png, jpg, jpeg, webp | ADR-003 |
+| Blob storage | Cloudinary, `type: authenticated` | ADR-039 |
 | Extracted text cap | 20 000 chars | ADR-005 |
 | OTP length / TTL | 6 digits / 10 min | ADR-010 |
 | OTP verify attempts | 5 | ADR-010 |

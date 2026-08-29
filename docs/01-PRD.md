@@ -107,13 +107,13 @@ Advanced OCR of images, complex folder hierarchies, file sharing/collaboration, 
 
 ## 16. Assumptions
 
-Consolidated in `30`. Key ones: PostgreSQL; 10MB/5-file limits; text/pdf/docx extraction only; httpOnly cookie JWT (reviewer-locked); Recharts (reviewer-locked); hard delete + cascade; local disk storage (ephemeral on free dynos — documented).
+Consolidated in `30`. Key ones: PostgreSQL on Neon; 10MB/5-file limits; text/pdf/docx extraction only; httpOnly cookie JWT (reviewer-locked); Recharts (reviewer-locked); hard delete + cascade; **Cloudinary blob storage** (ADR-039); `/api` prefix.
 
 ## 17. Risks
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Ephemeral disk loses uploads on redeploy | Files disappear in prod | Document clearly; offer object-storage upgrade path (ADR-004). |
+| Cloudinary quota exhausted or credentials invalid | Uploads fail | Free tier is 25 GB, far above assessment volume; credentials validated at boot (ADR-039). |
 | Gmail SMTP blocked / app password issues | OTP emails fail | Console fallback in dev; document app-password setup. |
 | Cross-origin cookie misconfig (SameSite/Secure) | Auth breaks in prod | Explicit CORS + cookie recipe in `24`; test end-to-end. |
 | Scope creep into bonuses | P0 unfinished | Strict P0-first ordering (`27`). |

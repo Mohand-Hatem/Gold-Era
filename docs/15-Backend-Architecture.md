@@ -56,7 +56,7 @@ Each module owns its routes/controller/service/repository and Zod schemas. Modul
 | `TokenService` | sign/verify JWT, cookie options | jsonwebtoken |
 | `PasswordService` | bcrypt hash/compare | bcrypt |
 | `MailService` | send OTP email; console fallback | nodemailer |
-| `StorageService` | write/read/remove blobs; abstract disk (ADR-004) | fs (later S3) |
+| `StorageService` | upload/stream/remove blobs; abstracts the provider (ADR-039) | cloudinary |
 | `ExtractionService` | route by type → text | pdf-parse, mammoth |
 | `OtpService` | generate/hash/validate OTP + rate rules | crypto, bcrypt |
 

@@ -58,8 +58,10 @@ Work top to bottom. Do not start a step until its prerequisites pass verificatio
 
 - **Objective:** upload pipeline building blocks.
 - **Prereq:** Step 3.
-- **Create:** `services/storage.service.ts,extraction.service.ts`; `middleware/upload.ts`; `utils/sanitizeFilename.ts,categorize.ts`.
-- **Deps:** multer, file-type, pdf-parse, mammoth, uuid.
+- **Create:** `services/storage.service.ts,extraction.service.ts`; `config/cloudinary.ts`; `middleware/upload.ts`; `utils/sanitizeFilename.ts,categorize.ts`.
+- **Deps:** multer@2.3.0, @types/multer, cloudinary@2.11.0, file-type@16.5.4, pdf-parse@1.1.4, mammoth@1.12.2.
+
+  > `uuid` dropped — Node's built-in `crypto.randomUUID()` replaces it (ADR-041). `file-type` and `pdf-parse` are pinned to their last CommonJS majors because the backend is CJS (ADR-040). Blobs go to Cloudinary via `StorageService`, not local disk (ADR-039); `multer-storage-cloudinary` is deliberately not used because it would store files before validation can run.
 - **Verify:** unit: store+read+remove; extract sample txt/pdf/docx; oversize/type rejected by multer/filter.
 
 ## Step 7 — Files endpoints (Phase 5b)

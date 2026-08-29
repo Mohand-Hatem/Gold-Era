@@ -107,7 +107,7 @@ Mark each: `[ ]` Not started · `[~]` In progress · `[x]` Done. Do not submit u
 - [ ] `migrate deploy` + `db seed` run in prod.
 - [ ] Frontend deployed (Vercel) with `NEXT_PUBLIC_API_URL`.
 - [ ] Cross-origin login + upload verified in production.
-- [ ] Ephemeral-storage limitation documented.
+- [ ] Cloudinary credentials set; production upload succeeds and survives a redeploy.
 
 ## Environment variables
 

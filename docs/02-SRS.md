@@ -48,7 +48,7 @@ Managing Your Files is a modular-monolith full-stack web application. A Next.js 
 | REST API | JSON over HTTPS under `/api` (ADR-027); multipart for uploads. Envelope per ADR-025. |
 | Email | Outbound SMTP for OTP delivery. |
 | Browser | Responsive web UI, cookie-based session. |
-| Filesystem | Local disk storage via `StorageService` (ADR-004). |
+| Blob storage | Cloudinary via `StorageService` (ADR-039). |
 
 ---
 

@@ -63,7 +63,7 @@ The assignment is complete only when **all P0 items** below are satisfied. P1/P2
 - [ ] Backend deployed; `/health` ok; migrations + seed run.
 - [ ] Frontend deployed (Vercel) with `NEXT_PUBLIC_API_URL`.
 - [ ] Cross-origin cookie auth verified in production.
-- [ ] Ephemeral-storage limitation documented.
+- [ ] Cloudinary credentials set; a production upload succeeds and survives a redeploy.
 
 ## Documentation (P0)
 

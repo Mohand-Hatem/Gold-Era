@@ -13,7 +13,7 @@ flowchart TD
   D --> E[Multer memoryStorage + limits]
   E --> F[Per-file server validation: ext + declared MIME + magic bytes]
   F -->|invalid| F1[push to failed[]; skip]
-  F -->|valid| G[StorageService.write: uuid.ext]
+  F -->|valid| G[StorageService.upload -> Cloudinary authenticated]
   G --> H[Compute SHA-256 checksum]
   H --> I[Derive category from mimeType]
   I --> J[ExtractionService: text/pdf/docx | image/other]
@@ -40,12 +40,14 @@ Limits: **≤10 MB/file**, **≤5 files/request**, **≤50 MB/request**.
 3. **Server allow-list**: extension ∈ list AND declared MIME ∈ list.
 4. **Magic-byte sniff** (`file-type`) on buffer: detected MIME must match declared/extension family. Mismatch → reject (`ERR_UNSUPPORTED_TYPE`) — blocks MIME spoofing (e.g. `.exe` renamed `.png`). Note: plain text types (txt/md/csv/json) have no reliable magic bytes → validated by extension + declared MIME + UTF-8 decode check.
 
-## 4. Storage strategy (ADR-004)
+## 4. Storage strategy (ADR-039, supersedes ADR-004)
 
-- `Multer memoryStorage` → validate buffer → `StorageService.write(buffer, ext)` returns `storageKey = <uuid>.<ext>`.
-- Files saved under `server/uploads/`. Path built from a sanitised base + storageKey; **client filename never used for path** (ADR-016) → no path traversal.
-- `StorageService` interface: `write(buffer, ext) → key`, `read(key) → stream`, `remove(key)`, `path(key)`. Swap to S3/R2 later without touching controllers.
-- **Ephemeral-disk risk** on free dynos documented (`24`, README).
+- `Multer memoryStorage` → validate buffer → `StorageService.upload(buffer, ext)` returns `storageKey`.
+- Blobs live in **Cloudinary**. `storageKey` is the Cloudinary `public_id`; `originalName` is display-only and never used to build a path (ADR-016).
+- `StorageService` interface: `upload(buffer, ext, mimeType) → key`, `stream(key) → Readable`, `remove(key)`, `removeMany(keys)`. The abstraction ADR-004 introduced is what made switching providers a single-file change.
+- **Access control:** uploads use Cloudinary `type: "authenticated"` and raw Cloudinary URLs are never returned by the API. All reads flow through `GET /files/:id/download`, behind `authenticate` + ownership. Returning a public URL would defeat FILE-015.
+- **No ephemeral-disk risk.** Blobs survive redeploys and dyno restarts, which was the known weakness of the previous local-disk design.
+- `multer-storage-cloudinary` is deliberately **not** used: it streams to the provider during multipart parsing, before extension/MIME/magic-byte validation can run, and it is unmaintained (see ADR-039).
 
 ## 5. Multiple upload & partial success (ADR-002)
 
@@ -57,7 +59,7 @@ Limits: **≤10 MB/file**, **≤5 files/request**, **≤50 MB/request**.
 
 - Duplicates allowed; `checksum` (SHA-256) stored for future dedupe.
 - `originalName` sanitised (≤255, control chars stripped) and stored for display.
-- Disk name is opaque UUID; `storageKey` unique.
+- Storage key is an opaque generated UUID (`crypto.randomUUID()`, ADR-041); `storageKey` unique.
 
 ## 7. Content extraction (ADR-005/006)
 
@@ -80,17 +82,17 @@ Rules:
 | Failure point | Action |
 |---|---|
 | Validation | nothing written; report failed. |
-| Storage write error | no DB row; report failed. |
+| Storage upload error | no DB row; report failed. |
 | Extraction error | file kept; status FAILED. |
-| DB persist error after blob write | `StorageService.remove(key)` then report failed → no orphan blob. |
+| DB persist error after blob upload | `StorageService.remove(key)` then report failed → no orphan blob. |
 
-Order: **write blob → persist row (with checksum/metadata) → attempt extraction → update status**. Alternative: extract before persist so the row is written once with final status; either avoids orphans as long as blob cleanup runs on DB failure. Implementation uses: write blob → extract → single create with final status; on any error after write, remove blob.
+Order: **extract text from the buffer → upload blob → single DB create with final status**. Extraction runs first so the row is written once, already carrying its final `extractionStatus`. If the DB create fails after a successful upload, `StorageService.remove(key)` runs so no orphan blob is left behind.
 
 ## 9. Authorized access & download (ADR-023)
 
 - Upload/list/details/delete are authenticated; ownership enforced (`08`).
 - `GET /files/:id/download` streams via `StorageService.read` for owner/admin only; sets `Content-Type` from stored mimeType; `Content-Disposition` from `?disposition`.
-- No public/static exposure of the uploads directory — all access flows through authorized routes.
+- No public/static exposure of blobs — Cloudinary uploads are `type: "authenticated"` and raw provider URLs are never returned; all access flows through authorized routes (ADR-039).
 
 ## 10. Frontend upload UX (FILE-003/004/005)
 

@@ -25,6 +25,7 @@ server/
 │   │   ├── env.ts              # typed, validated env (25)
 │   │   ├── prisma.ts           # PrismaClient singleton
 │   │   ├── cors.ts             # credentialed CORS allow-list
+│   │   ├── cloudinary.ts       # Cloudinary SDK config (ADR-039)
 │   │   └── constants.ts        # limits, allowed types, OTP/JWT settings
 │   ├── middleware/
 │   │   ├── authenticate.ts
@@ -67,7 +68,6 @@ server/
 │   ├── files.test.ts
 │   ├── users.test.ts
 │   └── helpers/
-├── uploads/                     # local blob storage (gitignored)
 ├── .env.example
 ├── package.json
 ├── tsconfig.json
@@ -84,7 +84,6 @@ server/
 | `utils/` | pure helpers, error type, response envelope. |
 | `types/` | ambient TypeScript augmentations. |
 | `tests/` | automated tests. |
-| `uploads/` | on-disk blobs (ephemeral in prod; gitignored). |
 
 ## Frontend — `client/`
 
