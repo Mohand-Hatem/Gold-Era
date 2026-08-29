@@ -63,6 +63,16 @@ export const BCRYPT_COST = 12
 export const AUTH_COOKIE_NAME = "access_token"
 export const AUTH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
+/**
+ * Requests per IP per rate-limit window on auth routes.
+ *
+ * Deliberately tighter than env.RATE_LIMIT_MAX (a general-purpose default):
+ * 100 login attempts per 15 minutes is not a meaningful brake on credential
+ * stuffing, whereas 20 is, while still leaving room for a user who mistypes a
+ * password several times and then requests a couple of verification codes.
+ */
+export const AUTH_RATE_LIMIT_MAX = 20
+
 // ── Pagination (ADR-012) ────────────────────────────────────────────────────
 export const DEFAULT_PAGE = 1
 export const DEFAULT_PAGE_SIZE = 10

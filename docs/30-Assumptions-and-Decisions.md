@@ -373,6 +373,37 @@ Two decisions were made by the human reviewer and are locked:
 | Impact | `package.json` names, UI branding (Phase 7+), README, page metadata. Does not change any requirement, endpoint, or data model. |
 | Priority | P0 |
 
+## ADR-036 — `POST /auth/logout` is public and idempotent
+
+| | |
+|---|---|
+| Ambiguity | `11` lists logout at auth level "User", implying it requires a valid token. |
+| Decision | **Public.** It always clears the cookie and always returns 200. |
+| Reason | Requiring `authenticate` creates a dead end: once the token expires the endpoint returns 401 and the cookie is never cleared, so the browser keeps sending a stale cookie until it expires on its own. Clearing a cookie the caller already holds grants no capability, so there is nothing to protect. |
+| Impact | `auth.routes.ts` omits `authenticate` on logout; `11` and `12` diverge from the original "User" level; the frontend can call logout unconditionally. |
+| Priority | P0 |
+
+## ADR-037 — Auth rate limit value
+
+| | |
+|---|---|
+| Ambiguity | `20` §9 requires rate limiting on auth routes but names no threshold; `env.RATE_LIMIT_MAX` defaults to 100. |
+| Decision | **20 requests per IP per 15-minute window** on `/auth/register`, `/verify-email`, `/resend-code`, `/login`. `env.RATE_LIMIT_MAX` remains for a future general-purpose limiter. Skipped when `NODE_ENV=test`. |
+| Reason | 100 login attempts per 15 minutes is not a meaningful brake on credential stuffing; 20 is, while still tolerating a user who mistypes a password a few times and requests a couple of codes. Disabling it under test prevents one suite of auth cases from tripping the limiter and cascading failures. |
+| Impact | `constants.ts` `AUTH_RATE_LIMIT_MAX`; `middleware/rateLimit.ts`. `/auth/profile` is excluded — it already requires a token. |
+| Priority | P1 |
+| Note | In-memory store. Effective for a single dyno only; horizontal scaling would need a shared store. |
+
+## ADR-038 — Superseded verification codes are consumed, not deleted
+
+| | |
+|---|---|
+| Ambiguity | ADR-010 requires that issuing a new OTP invalidates prior ones; the mechanism was unspecified. |
+| Decision | Prior codes are marked `consumedAt`, **not** deleted. |
+| Reason | The hourly resend cap counts rows by `createdAt`. Deleting superseded codes would erase that history and silently defeat the limit — a caller could resend indefinitely. |
+| Impact | `auth.repository.consumeAllActiveCodes`; `VerificationCode` rows accumulate (bounded by the resend cap and removed by user-delete cascade). |
+| Priority | P0 |
+
 ## Decision summary table
 
 | ADR | Topic | Decision | Priority |
@@ -413,3 +444,6 @@ Two decisions were made by the human reviewer and are locked:
 | 033 | Database host | Neon managed PostgreSQL 18 | P0 |
 | 034 | Prisma version | pinned 6.19.3 (not 8.x RC) | P0 |
 | 035 | Project name | **Filox** | P0 |
+| 036 | Logout auth level | public + idempotent | P0 |
+| 037 | Auth rate limit | 20 per IP / 15 min | P1 |
+| 038 | Superseded OTPs | consumed, not deleted | P0 |

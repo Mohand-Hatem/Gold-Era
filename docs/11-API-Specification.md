@@ -166,9 +166,11 @@ Cookie attributes: `HttpOnly; Secure; SameSite=None; Path=/; Max-Age=604800`.
 
 ---
 
-### POST /auth/logout — User
+### POST /auth/logout — Public (ADR-036)
 
 Clears the cookie. Success 200: `{ "success": true, "data": { "message": "Logged out" } }`.
+
+> Originally specified as authenticated. Changed to public and idempotent during Phase 4: requiring a valid token means an expired session can never clear its cookie, leaving the browser to keep sending a stale one. Clearing a cookie the caller already holds grants no capability.
 
 ---
 
@@ -363,7 +365,7 @@ Errors: 401; 403.
 | POST | /auth/verify-email | Public | AUTH-003/012 |
 | POST | /auth/resend-code | Public | AUTH-004 |
 | POST | /auth/login | Public | AUTH-005/006/007 |
-| POST | /auth/logout | User | AUTH-011 |
+| POST | /auth/logout | Public (ADR-036) | AUTH-011 |
 | GET | /auth/profile | User | AUTH-008 |
 | GET | /users | Admin | USER-002/003 |
 | PATCH | /users/:id | Admin | USER-004/006 |

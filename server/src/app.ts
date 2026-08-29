@@ -1,11 +1,12 @@
 import cookieParser from "cookie-parser"
 import express, { type Express, type Request, type Response } from "express"
 
-import { JSON_BODY_LIMIT } from "./config/constants"
+import { API_PREFIX, JSON_BODY_LIMIT } from "./config/constants"
 import { corsMiddleware } from "./config/cors"
 import { errorHandler } from "./middleware/errorHandler"
 import { notFound } from "./middleware/notFound"
 import { requestLogger } from "./middleware/requestLogger"
+import { authRoutes } from "./modules/auth/auth.routes"
 
 /**
  * Composes the Express application.
@@ -44,11 +45,11 @@ export function createApp(): Express {
   })
 
   // ── API routers ───────────────────────────────────────────────────────────
-  // Mounted under API_PREFIX from Phase 4 onward:
-  //   app.use(`${API_PREFIX}/auth`,  authRoutes)
-  //   app.use(`${API_PREFIX}/users`, userRoutes)
-  //   app.use(`${API_PREFIX}/files`, fileRoutes)
-  //   app.use(`${API_PREFIX}/stats`, statsRoutes)
+  app.use(`${API_PREFIX}/auth`, authRoutes)
+  // Mounted in later phases:
+  //   app.use(`${API_PREFIX}/users`, userRoutes)   Phase 6
+  //   app.use(`${API_PREFIX}/files`, fileRoutes)   Phase 5
+  //   app.use(`${API_PREFIX}/stats`, statsRoutes)  Phase 6
 
   // ── Terminal middleware ───────────────────────────────────────────────────
   app.use(notFound)

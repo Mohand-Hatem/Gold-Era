@@ -87,9 +87,10 @@ flowchart LR
 
 - `authorizeRole('ADMIN')` runs after `authenticate`; compares `req.user.role`. Non-match → 403 `ERR_FORBIDDEN`. (`08`)
 
-## 8. Logout (ADR-009)
+## 8. Logout (ADR-009, ADR-036)
 
 - `POST /auth/logout` sets `access_token` cookie with `Max-Age=0` (cleared). Client clears React Query cache and redirects to `/login`.
+- **Public and idempotent** (ADR-036): it does not require a valid token, so an expired session can still clear its cookie. Always returns 200.
 - Stateless: no server session store. Optional global invalidation via `tokenVersion++`.
 
 ## 9. Invalid/expired token behaviour
