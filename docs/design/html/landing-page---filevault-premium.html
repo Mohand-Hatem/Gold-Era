@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FileVault - All Your Files, One Secure Place</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#d3e4fe",
+                        "surface": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#eff4ff",
+                        "outline-variant": "#c6c6cd",
+                        "surface-dim": "#cbdbf5",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "on-primary-container": "#7c839b",
+                        "primary-container": "#131b2e",
+                        "primary-fixed-dim": "#bec6e0",
+                        "inverse-primary": "#bec6e0",
+                        "surface-tint": "#565e74",
+                        "on-primary-fixed": "#131b2e",
+                        "surface-variant": "#d3e4fe",
+                        "secondary-fixed": "#dbe1ff",
+                        "primary-fixed": "#dae2fd",
+                        "outline": "#76777d",
+                        "on-tertiary-fixed-variant": "#574425",
+                        "primary": "#000000",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "error": "#ba1a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "on-error": "#ffffff",
+                        "tertiary": "#000000",
+                        "on-background": "#0b1c30",
+                        "background": "#f8f9ff",
+                        "secondary-container": "#316bf3",
+                        "surface-bright": "#f8f9ff",
+                        "on-tertiary-fixed": "#271901",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#45464d",
+                        "tertiary-fixed-dim": "#dec29a",
+                        "surface-container": "#e5eeff",
+                        "on-tertiary-container": "#98805d",
+                        "tertiary-fixed": "#fcdeb5",
+                        "on-secondary-container": "#fefcff",
+                        "on-secondary-fixed": "#00174b",
+                        "on-surface": "#0b1c30",
+                        "tertiary-container": "#271901",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#0051d5",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-container-high": "#dce9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "xs": "4px",
+                        "gutter": "24px",
+                        "container-max": "1440px",
+                        "md": "16px",
+                        "unit": "8px",
+                        "3xl": "64px",
+                        "2xl": "48px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "h3": ["Hanken Grotesk"],
+                        "h1": ["Hanken Grotesk"],
+                        "label-caps": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "h1-mobile": ["Hanken Grotesk"],
+                        "mono-label": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "h2": ["Hanken Grotesk"],
+                        "body-lg": ["Inter"],
+                        "display": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "h3": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "h1": ["32px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "label-caps": ["11px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-sm": ["12px", { "lineHeight": "1.4", "fontWeight": "400" }],
+                        "h1-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "mono-label": ["12px", { "lineHeight": "1", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "h2": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-lg antialiased">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 bg-surface/80 dark:bg-primary-container/80 backdrop-blur-md bg-surface dark:bg-primary-container">
+<div class="flex justify-between items-center w-full px-lg py-md max-w-container-max mx-auto">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary text-3xl" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-h2 text-h2 font-bold text-primary dark:text-primary-fixed">FileVault</span>
+</div>
+<div class="hidden md:flex items-center gap-lg">
+<a class="font-body-md text-body-md text-secondary dark:text-secondary-fixed font-bold border-b-2 border-secondary pb-1 hover:text-secondary transition-colors duration-200" href="#">Home</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-primary-container hover:text-secondary transition-colors duration-200" href="#">Features</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-primary-container hover:text-secondary transition-colors duration-200" href="#">Pricing</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-primary-container hover:text-secondary transition-colors duration-200 flex items-center gap-xs" href="#">Resources <span class="material-symbols-outlined text-sm">expand_more</span></a>
+</div>
+<div class="hidden md:flex items-center gap-md">
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-secondary font-body-md text-body-md transition-colors duration-200">
+<span class="material-symbols-outlined">language</span> EN <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+<a class="font-body-md text-body-md text-on-surface hover:text-secondary transition-colors duration-200" href="#">Login</a>
+<a class="bg-primary text-on-primary px-lg py-unit rounded font-body-md text-body-md font-semibold hover:opacity-90 scale-95 active:scale-90 transition-transform" href="#">Get Started</a>
+</div>
+<button class="md:hidden p-xs">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="pt-3xl">
+<!-- Hero Section -->
+<section class="max-w-container-max mx-auto px-lg md:px-xl py-2xl md:py-3xl flex flex-col md:flex-row items-center gap-2xl">
+<div class="w-full md:w-1/2 flex flex-col gap-lg">
+<h1 class="font-display text-display text-on-surface max-w-[600px]">All Your Files,<br/>One Secure Place</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-[480px]">
+                    Store, organize and share your files with confidence. Access everything, anywhere, anytime.
+                </p>
+<div class="flex flex-col sm:flex-row gap-md mt-md">
+<button class="bg-secondary text-on-secondary px-xl py-md rounded-xl font-body-md text-body-md font-semibold hover:bg-secondary/90 transition-colors flex items-center justify-center gap-sm">
+                        Get Started Free <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<button class="bg-surface-container-lowest border border-outline-variant text-on-surface px-xl py-md rounded-xl font-body-md text-body-md font-semibold hover:bg-surface-container-low transition-colors flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">play_circle</span> Watch Demo
+                    </button>
+</div>
+<div class="flex flex-wrap gap-lg mt-md">
+<div class="flex items-center gap-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-secondary text-sm">check</span> Secure
+                    </div>
+<div class="flex items-center gap-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-secondary text-sm">check</span> Private
+                    </div>
+<div class="flex items-center gap-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-secondary text-sm">check</span> Always Available
+                    </div>
+</div>
+</div>
+<div class="w-full md:w-1/2 relative">
+<div class="bg-surface-container-low rounded-3xl p-xl aspect-[4/3] flex items-center justify-center relative overflow-hidden">
+<img class="w-full h-full object-contain z-10 relative" data-alt="A stylized 3D illustration of a vibrant blue digital folder floating in mid-air against a soft, light-mode background. Several floating documents with subtle file-type icons (PDF, DOCX, XLSX) are bursting out of the folder. A small floating white card with subtle shadows displays '1.2 TB of storage used' with a progress bar. The aesthetic is clean, modern, and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDykDBbjk8Rs1zKftH03b6UwuXq-hLc9n384DVgbxdseXDxS9Y57DQfLl8Y6IexKP6gTrGC_A6qBwnYzri9-PrHOTTLkH6hUN7TWaSP518r8Y4dhNdirGafjhp2LP2X0IVw_VDXqy8tdRTwb7pLCJ6S_xG7oUM9ugs6pphWIcuSfx5MIymhxFJIrFDbOIUYWO1a11-P-76do0rUebNF-Uhm5YPsUhNKuSTtHCePhyc2muEXgbduG8ZmJA"/>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low dark:bg-primary-container border-t border-outline-variant dark:border-primary-fixed-dim mt-3xl">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-lg py-2xl max-w-container-max mx-auto gap-lg">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary text-2xl" style="font-variation-settings: 'FILL' 1;">folder</span>
+<div>
+<span class="font-h3 text-h3 font-bold text-primary dark:text-primary-fixed block leading-none">FileVault</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block mt-xs">Secure · Simple · Reliable</span>
+</div>
+</div>
+<div class="flex flex-wrap justify-center gap-lg font-body-sm text-body-sm">
+<a class="text-on-surface-variant dark:text-on-primary-container opacity-80 hover:opacity-100 hover:text-secondary dark:hover:text-secondary-fixed-dim transition-opacity" href="#">About</a>
+<a class="text-on-surface-variant dark:text-on-primary-container opacity-80 hover:opacity-100 hover:text-secondary dark:hover:text-secondary-fixed-dim transition-opacity" href="#">Features</a>
+<a class="text-on-surface-variant dark:text-on-primary-container opacity-80 hover:opacity-100 hover:text-secondary dark:hover:text-secondary-fixed-dim transition-opacity" href="#">Pricing</a>
+<a class="text-on-surface-variant dark:text-on-primary-container opacity-80 hover:opacity-100 hover:text-secondary dark:hover:text-secondary-fixed-dim transition-opacity" href="#">Support</a>
+<a class="text-on-surface-variant dark:text-on-primary-container opacity-80 hover:opacity-100 hover:text-secondary dark:hover:text-secondary-fixed-dim transition-opacity" href="#">Privacy</a>
+<a class="text-on-surface-variant dark:text-on-primary-container opacity-80 hover:opacity-100 hover:text-secondary dark:hover:text-secondary-fixed-dim transition-opacity" href="#">Terms</a>
+</div>
+<div class="flex gap-md text-on-surface-variant">
+<a class="hover:text-secondary transition-colors" href="#"><span class="material-symbols-outlined">share</span></a>
+<a class="hover:text-secondary transition-colors" href="#"><span class="material-symbols-outlined">forum</span></a>
+</div>
+</div>
+<div class="text-center pb-lg font-body-sm text-body-sm text-on-surface-variant opacity-60">
+            © 2024 FileVault. All rights reserved.
+        </div>
+</footer>
+</body></html>

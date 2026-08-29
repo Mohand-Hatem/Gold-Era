@@ -1,0 +1,152 @@
+﻿{
+    "name":  "assets/463eff7774a34a85bd4e51a716d40677",
+    "designSystem":  {
+                         "displayName":  "Structure \u0026 Flow",
+                         "styleGuidelines":  "## Brand \u0026 Style\nThe design system focuses on **Minimalism** and **Productive Professionalism**. The intent is to provide a neutral, high-fidelity canvas that disappears, allowing the user\u0027s documents and data to take center stage. \n\nThe aesthetic is characterized by:\n- **Clarity over Decoration:** Every line and margin serves a functional purpose.\n- **Trusted Utility:** A feeling of digital permanence and security through structured alignment and deliberate whitespace.\n- **Density Balance:** High information density for data-heavy views (tables/lists) offset by generous outer margins to prevent cognitive overload.\n\n## Layout \u0026 Spacing\nThe system is built on a strict **8pt grid**. All margins, paddings, and height increments must be multiples of 8 (or 4 for micro-adjustments).\n\n- **Grid Model:** 12-column fluid grid for desktop with 24px gutters.\n- **Sidebar:** Fixed at 280px for desktop, collapsible to 64px (icon only) or hidden on mobile with a hamburger trigger.\n- **Density:** \n  - **Default:** 12px vertical padding on table rows.\n  - **Compact:** 8px vertical padding for high-volume file explorers.\n- **Responsive:** Transition to a single-column layout at 768px. In mobile views, horizontal padding for the main container reduces to 16px.\n\n## Elevation \u0026 Depth\nDepth is conveyed primarily through **Tonal Layers** rather than heavy shadows. \n\n- **Level 0 (Base):** #F8FAFC (App background).\n- **Level 1 (Cards/Surface):** #FFFFFF with a 1px border (#E2E8F0). No shadow.\n- **Level 2 (Popovers/Modals):** #FFFFFF with a subtle ambient shadow (0px 10px 15px -3px rgba(0,0,0,0.05)) and a 1px border.\n- **Active State:** Use a 2px \"Focus Ring\" (#2563EB with 20% opacity) for keyboard navigation and active input states. \n\nAvoid depth for purely aesthetic reasons; elevation must indicate interactivity or a change in the z-axis (e.g., a file being dragged or a modal window).\n\n## Components\n\n### Buttons\n- **Primary:** Background #0F172A, Text #FFFFFF. Flat, no gradient.\n- **Secondary:** Background #FFFFFF, Border #E2E8F0, Text #0F172A.\n- **Ghost:** No background or border. Text #64748B. Used for secondary actions in a row.\n\n### File Rows \u0026 Lists\n- **Structure:** [Icon] [Filename] [Owner] [Last Modified] [Size] [Actions].\n- **Hover State:** Apply a background of #F1F5F9.\n- **Selected State:** Apply a background of #EFF6FF and a left-accent border of 3px #2563EB.\n\n### File-Type Visual Language\nUse a consistent icon set with semantic color coding:\n- **PDF:** Red (#EF4444) icon or accent.\n- **Sheets/XLSX:** Green (#10B981) icon or accent.\n- **Docs/DOCX:** Blue (#3B82F6) icon or accent.\n- **Images:** Purple (#8B5CF6).\n- **Folders:** Amber (#F59E0B) for high visibility.\n\n### Upload Zones\n- **Idle:** Dashed border (2px, #CBD5E1), light gray background.\n- **Active (Drag Over):** Blue border (#2563EB), light blue background (#EFF6FF).\n\n### Progress Bars\n- **Height:** 4px or 8px.\n- **Track:** #E2E8F0.\n- **Indicator:** #2563EB. Use a pulsing animation for indeterminate states.\n\n### Data Tables\n- **Header:** Sticky, #F8FAFC background, uppercase `label-caps` typography, 1px bottom border.\n- **Cells:** 14px `body-md` text. Vertically centered content.",
+                         "theme":  {
+                                       "colorMode":  "LIGHT",
+                                       "font":  "HANKEN_GROTESK",
+                                       "roundness":  "ROUND_FOUR",
+                                       "customColor":  "#0f172a",
+                                       "headlineFont":  "HANKEN_GROTESK",
+                                       "bodyFont":  "INTER",
+                                       "labelFont":  "JETBRAINS_MONO",
+                                       "namedColors":  {
+                                                           "secondary_fixed_dim":  "#b4c5ff",
+                                                           "on_error":  "#ffffff",
+                                                           "surface_variant":  "#d3e4fe",
+                                                           "primary_container":  "#131b2e",
+                                                           "surface_dim":  "#cbdbf5",
+                                                           "surface_bright":  "#f8f9ff",
+                                                           "on_tertiary_fixed":  "#271901",
+                                                           "on_error_container":  "#93000a",
+                                                           "on_secondary_container":  "#fefcff",
+                                                           "primary_fixed":  "#dae2fd",
+                                                           "on_secondary_fixed":  "#00174b",
+                                                           "secondary":  "#0051d5",
+                                                           "surface_container_highest":  "#d3e4fe",
+                                                           "secondary_fixed":  "#dbe1ff",
+                                                           "on_primary_fixed_variant":  "#3f465c",
+                                                           "on_tertiary_container":  "#98805d",
+                                                           "surface_container":  "#e5eeff",
+                                                           "error_container":  "#ffdad6",
+                                                           "inverse_primary":  "#bec6e0",
+                                                           "tertiary":  "#000000",
+                                                           "surface_tint":  "#565e74",
+                                                           "on_tertiary_fixed_variant":  "#574425",
+                                                           "surface":  "#f8f9ff",
+                                                           "tertiary_fixed":  "#fcdeb5",
+                                                           "surface_container_lowest":  "#ffffff",
+                                                           "on_secondary":  "#ffffff",
+                                                           "on_tertiary":  "#ffffff",
+                                                           "on_secondary_fixed_variant":  "#003ea8",
+                                                           "on_primary_fixed":  "#131b2e",
+                                                           "primary":  "#000000",
+                                                           "on_primary":  "#ffffff",
+                                                           "inverse_on_surface":  "#eaf1ff",
+                                                           "inverse_surface":  "#213145",
+                                                           "surface_container_low":  "#eff4ff",
+                                                           "outline":  "#76777d",
+                                                           "tertiary_fixed_dim":  "#dec29a",
+                                                           "background":  "#f8f9ff",
+                                                           "on_surface":  "#0b1c30",
+                                                           "error":  "#ba1a1a",
+                                                           "outline_variant":  "#c6c6cd",
+                                                           "on_surface_variant":  "#45464d",
+                                                           "surface_container_high":  "#dce9ff",
+                                                           "tertiary_container":  "#271901",
+                                                           "on_background":  "#0b1c30",
+                                                           "secondary_container":  "#316bf3",
+                                                           "primary_fixed_dim":  "#bec6e0",
+                                                           "on_primary_container":  "#7c839b"
+                                                       },
+                                       "designMd":  "---\nname: Structure \u0026 Flow\ncolors:\n  surface: \u0027#f8f9ff\u0027\n  surface-dim: \u0027#cbdbf5\u0027\n  surface-bright: \u0027#f8f9ff\u0027\n  surface-container-lowest: \u0027#ffffff\u0027\n  surface-container-low: \u0027#eff4ff\u0027\n  surface-container: \u0027#e5eeff\u0027\n  surface-container-high: \u0027#dce9ff\u0027\n  surface-container-highest: \u0027#d3e4fe\u0027\n  on-surface: \u0027#0b1c30\u0027\n  on-surface-variant: \u0027#45464d\u0027\n  inverse-surface: \u0027#213145\u0027\n  inverse-on-surface: \u0027#eaf1ff\u0027\n  outline: \u0027#76777d\u0027\n  outline-variant: \u0027#c6c6cd\u0027\n  surface-tint: \u0027#565e74\u0027\n  primary: \u0027#000000\u0027\n  on-primary: \u0027#ffffff\u0027\n  primary-container: \u0027#131b2e\u0027\n  on-primary-container: \u0027#7c839b\u0027\n  inverse-primary: \u0027#bec6e0\u0027\n  secondary: \u0027#0051d5\u0027\n  on-secondary: \u0027#ffffff\u0027\n  secondary-container: \u0027#316bf3\u0027\n  on-secondary-container: \u0027#fefcff\u0027\n  tertiary: \u0027#000000\u0027\n  on-tertiary: \u0027#ffffff\u0027\n  tertiary-container: \u0027#271901\u0027\n  on-tertiary-container: \u0027#98805d\u0027\n  error: \u0027#ba1a1a\u0027\n  on-error: \u0027#ffffff\u0027\n  error-container: \u0027#ffdad6\u0027\n  on-error-container: \u0027#93000a\u0027\n  primary-fixed: \u0027#dae2fd\u0027\n  primary-fixed-dim: \u0027#bec6e0\u0027\n  on-primary-fixed: \u0027#131b2e\u0027\n  on-primary-fixed-variant: \u0027#3f465c\u0027\n  secondary-fixed: \u0027#dbe1ff\u0027\n  secondary-fixed-dim: \u0027#b4c5ff\u0027\n  on-secondary-fixed: \u0027#00174b\u0027\n  on-secondary-fixed-variant: \u0027#003ea8\u0027\n  tertiary-fixed: \u0027#fcdeb5\u0027\n  tertiary-fixed-dim: \u0027#dec29a\u0027\n  on-tertiary-fixed: \u0027#271901\u0027\n  on-tertiary-fixed-variant: \u0027#574425\u0027\n  background: \u0027#f8f9ff\u0027\n  on-background: \u0027#0b1c30\u0027\n  surface-variant: \u0027#d3e4fe\u0027\ntypography:\n  display:\n    fontFamily: Hanken Grotesk\n    fontSize: 48px\n    fontWeight: \u0027700\u0027\n    lineHeight: \u00271.1\u0027\n    letterSpacing: -0.02em\n  h1:\n    fontFamily: Hanken Grotesk\n    fontSize: 32px\n    fontWeight: \u0027600\u0027\n    lineHeight: \u00271.2\u0027\n  h1-mobile:\n    fontFamily: Hanken Grotesk\n    fontSize: 24px\n    fontWeight: \u0027600\u0027\n    lineHeight: \u00271.2\u0027\n  h2:\n    fontFamily: Hanken Grotesk\n    fontSize: 24px\n    fontWeight: \u0027600\u0027\n    lineHeight: \u00271.3\u0027\n  h3:\n    fontFamily: Hanken Grotesk\n    fontSize: 18px\n    fontWeight: \u0027600\u0027\n    lineHeight: \u00271.4\u0027\n  body-lg:\n    fontFamily: Inter\n    fontSize: 16px\n    fontWeight: \u0027400\u0027\n    lineHeight: \u00271.5\u0027\n  body-md:\n    fontFamily: Inter\n    fontSize: 14px\n    fontWeight: \u0027400\u0027\n    lineHeight: \u00271.5\u0027\n  body-sm:\n    fontFamily: Inter\n    fontSize: 12px\n    fontWeight: \u0027400\u0027\n    lineHeight: \u00271.4\u0027\n  label-caps:\n    fontFamily: Inter\n    fontSize: 11px\n    fontWeight: \u0027600\u0027\n    lineHeight: \u00271\u0027\n    letterSpacing: 0.05em\n  mono-label:\n    fontFamily: JetBrains Mono\n    fontSize: 12px\n    fontWeight: \u0027400\u0027\n    lineHeight: \u00271\u0027\nrounded:\n  sm: 0.125rem\n  DEFAULT: 0.25rem\n  md: 0.375rem\n  lg: 0.5rem\n  xl: 0.75rem\n  full: 9999px\nspacing:\n  unit: 8px\n  xs: 4px\n  sm: 8px\n  md: 16px\n  lg: 24px\n  xl: 32px\n  2xl: 48px\n  3xl: 64px\n  container-max: 1440px\n  gutter: 24px\n  margin-mobile: 16px\n---\n\n## Brand \u0026 Style\nThe design system focuses on **Minimalism** and **Productive Professionalism**. The intent is to provide a neutral, high-fidelity canvas that disappears, allowing the user\u0027s documents and data to take center stage. \n\nThe aesthetic is characterized by:\n- **Clarity over Decoration:** Every line and margin serves a functional purpose.\n- **Trusted Utility:** A feeling of digital permanence and security through structured alignment and deliberate whitespace.\n- **Density Balance:** High information density for data-heavy views (tables/lists) offset by generous outer margins to prevent cognitive overload.\n\n## Colors\nThe palette is built on a foundation of deep neutrals and a functional \"Action Blue.\" \n\n- **Primary (#0F172A):** Used for high-level navigation, text, and primary headings to establish authority.\n- **Brand/Action (#2563EB):** Reserved for primary buttons, active states, and interactive indicators.\n- **Surface Tones:** Use a refined gray scale (Slate) for borders and backgrounds. \n  - `bg-main`: #FFFFFF\n  - `bg-subtle`: #F8FAFC\n  - `border-subtle`: #E2E8F0\n  - `border-strong`: #CBD5E1\n\n**Accessibility:** All text-on-background combinations must maintain a minimum contrast ratio of 4.5:1 (WCAG AA). Action states use a darker shade on hover to ensure intent is clear.\n\n## Typography\nThis design system utilizes a dual-sans approach. **Hanken Grotesk** provides a modern, sharp personality for headlines, while **Inter** ensures maximum legibility for document names and metadata. **JetBrains Mono** is used sparingly for technical metadata like file sizes, timestamps, and checksums to provide a subtle \"data-driven\" feel.\n\n- **Scale:** Use the 14px `body-md` as the standard for file lists and tables to maximize density without sacrificing readability.\n- **Weight:** Use Semibold (600) for interactive labels and Medium (500) for secondary metadata.\n\n## Layout \u0026 Spacing\nThe system is built on a strict **8pt grid**. All margins, paddings, and height increments must be multiples of 8 (or 4 for micro-adjustments).\n\n- **Grid Model:** 12-column fluid grid for desktop with 24px gutters.\n- **Sidebar:** Fixed at 280px for desktop, collapsible to 64px (icon only) or hidden on mobile with a hamburger trigger.\n- **Density:** \n  - **Default:** 12px vertical padding on table rows.\n  - **Compact:** 8px vertical padding for high-volume file explorers.\n- **Responsive:** Transition to a single-column layout at 768px. In mobile views, horizontal padding for the main container reduces to 16px.\n\n## Elevation \u0026 Depth\nDepth is conveyed primarily through **Tonal Layers** rather than heavy shadows. \n\n- **Level 0 (Base):** #F8FAFC (App background).\n- **Level 1 (Cards/Surface):** #FFFFFF with a 1px border (#E2E8F0). No shadow.\n- **Level 2 (Popovers/Modals):** #FFFFFF with a subtle ambient shadow (0px 10px 15px -3px rgba(0,0,0,0.05)) and a 1px border.\n- **Active State:** Use a 2px \"Focus Ring\" (#2563EB with 20% opacity) for keyboard navigation and active input states. \n\nAvoid depth for purely aesthetic reasons; elevation must indicate interactivity or a change in the z-axis (e.g., a file being dragged or a modal window).\n\n## Shapes\nThe shape language is **Soft (0.25rem)** to maintain a professional, slightly technical feel. \n\n- **Standard Buttons/Inputs:** 4px (0.25rem) radius.\n- **Cards/Containers:** 8px (0.5rem) radius.\n- **Selection Overlays:** 4px radius for file row hover states.\n- **Badges/Chips:** Full pill (999px) to contrast against the predominantly rectangular grid of the file explorer.\n\n## Components\n\n### Buttons\n- **Primary:** Background #0F172A, Text #FFFFFF. Flat, no gradient.\n- **Secondary:** Background #FFFFFF, Border #E2E8F0, Text #0F172A.\n- **Ghost:** No background or border. Text #64748B. Used for secondary actions in a row.\n\n### File Rows \u0026 Lists\n- **Structure:** [Icon] [Filename] [Owner] [Last Modified] [Size] [Actions].\n- **Hover State:** Apply a background of #F1F5F9.\n- **Selected State:** Apply a background of #EFF6FF and a left-accent border of 3px #2563EB.\n\n### File-Type Visual Language\nUse a consistent icon set with semantic color coding:\n- **PDF:** Red (#EF4444) icon or accent.\n- **Sheets/XLSX:** Green (#10B981) icon or accent.\n- **Docs/DOCX:** Blue (#3B82F6) icon or accent.\n- **Images:** Purple (#8B5CF6).\n- **Folders:** Amber (#F59E0B) for high visibility.\n\n### Upload Zones\n- **Idle:** Dashed border (2px, #CBD5E1), light gray background.\n- **Active (Drag Over):** Blue border (#2563EB), light blue background (#EFF6FF).\n\n### Progress Bars\n- **Height:** 4px or 8px.\n- **Track:** #E2E8F0.\n- **Indicator:** #2563EB. Use a pulsing animation for indeterminate states.\n\n### Data Tables\n- **Header:** Sticky, #F8FAFC background, uppercase `label-caps` typography, 1px bottom border.\n- **Cells:** 14px `body-md` text. Vertically centered content.",
+                                       "colorVariant":  "FIDELITY",
+                                       "overridePrimaryColor":  "#0f172a",
+                                       "overrideSecondaryColor":  "#2563eb",
+                                       "overrideNeutralColor":  "#64748b",
+                                       "spacingScale":  2,
+                                       "typography":  {
+                                                          "body-lg":  {
+                                                                          "fontFamily":  "Inter",
+                                                                          "fontSize":  "16px",
+                                                                          "fontWeight":  "400",
+                                                                          "lineHeight":  "1.5"
+                                                                      },
+                                                          "h2":  {
+                                                                     "fontFamily":  "Hanken Grotesk",
+                                                                     "fontSize":  "24px",
+                                                                     "fontWeight":  "600",
+                                                                     "lineHeight":  "1.3"
+                                                                 },
+                                                          "body-md":  {
+                                                                          "fontFamily":  "Inter",
+                                                                          "fontSize":  "14px",
+                                                                          "fontWeight":  "400",
+                                                                          "lineHeight":  "1.5"
+                                                                      },
+                                                          "h1":  {
+                                                                     "fontFamily":  "Hanken Grotesk",
+                                                                     "fontSize":  "32px",
+                                                                     "fontWeight":  "600",
+                                                                     "lineHeight":  "1.2"
+                                                                 },
+                                                          "body-sm":  {
+                                                                          "fontFamily":  "Inter",
+                                                                          "fontSize":  "12px",
+                                                                          "fontWeight":  "400",
+                                                                          "lineHeight":  "1.4"
+                                                                      },
+                                                          "label-caps":  {
+                                                                             "fontFamily":  "Inter",
+                                                                             "fontSize":  "11px",
+                                                                             "fontWeight":  "600",
+                                                                             "lineHeight":  "1",
+                                                                             "letterSpacing":  "0.05em"
+                                                                         },
+                                                          "h1-mobile":  {
+                                                                            "fontFamily":  "Hanken Grotesk",
+                                                                            "fontSize":  "24px",
+                                                                            "fontWeight":  "600",
+                                                                            "lineHeight":  "1.2"
+                                                                        },
+                                                          "h3":  {
+                                                                     "fontFamily":  "Hanken Grotesk",
+                                                                     "fontSize":  "18px",
+                                                                     "fontWeight":  "600",
+                                                                     "lineHeight":  "1.4"
+                                                                 },
+                                                          "mono-label":  {
+                                                                             "fontFamily":  "JetBrains Mono",
+                                                                             "fontSize":  "12px",
+                                                                             "fontWeight":  "400",
+                                                                             "lineHeight":  "1"
+                                                                         },
+                                                          "display":  {
+                                                                          "fontFamily":  "Hanken Grotesk",
+                                                                          "fontSize":  "48px",
+                                                                          "fontWeight":  "700",
+                                                                          "lineHeight":  "1.1",
+                                                                          "letterSpacing":  "-0.02em"
+                                                                      }
+                                                      },
+                                       "spacing":  {
+                                                       "margin-mobile":  "16px",
+                                                       "3xl":  "64px",
+                                                       "sm":  "8px",
+                                                       "container-max":  "1440px",
+                                                       "md":  "16px",
+                                                       "2xl":  "48px",
+                                                       "xs":  "4px",
+                                                       "unit":  "8px",
+                                                       "gutter":  "24px",
+                                                       "xl":  "32px",
+                                                       "lg":  "24px"
+                                                   },
+                                       "headlineFontFamily":  "Hanken Grotesk",
+                                       "bodyFontFamily":  "Inter",
+                                       "labelFontFamily":  "Jetbrains Mono"
+                                   }
+                     },
+    "version":  "1"
+}
