@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-@variant dark (&:where(.dark, .dark *));
-@custom-variant dark (&:where(.dark, .dark *));
+@variant dark (&:is(.dark, .dark *));
+@custom-variant dark (&:is(.dark, .dark *));
 
 @layer base {
   :root {
@@ -75,7 +75,7 @@
   }
 }
 
-/* Explicit Dark Mode Overrides to guarantee dark theme across all forms & cards */
+/* Explicit Dark Mode Overrides to guarantee dark theme across all forms, buttons & cards */
 .dark body {
   background-color: #090d16;
   color: #f8fafc;

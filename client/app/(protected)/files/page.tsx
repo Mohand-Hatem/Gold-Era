@@ -343,7 +343,7 @@ export default function MyFilesPage() {
 
         {/* Pagination Controls */}
         {meta.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 px-4 py-3 sm:px-6">
+          <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-3 sm:px-6">
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Showing <span className="font-semibold text-slate-700 dark:text-slate-200">{(page - 1) * limit + 1}</span> to{" "}
               <span className="font-semibold text-slate-700 dark:text-slate-200">

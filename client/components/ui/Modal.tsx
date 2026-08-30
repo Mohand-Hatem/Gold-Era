@@ -96,7 +96,7 @@ export function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850 p-4 sm:px-6">
+          <div className="flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 p-4 sm:px-6">
             {footer}
           </div>
         )}

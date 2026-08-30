@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import Link from "next/link"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import React, { useState } from "react";
+import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Users,
   Search,
@@ -18,36 +18,38 @@ import {
   Files,
   UserCheck,
   UserX,
-} from "lucide-react"
+} from "lucide-react";
 
-import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
-import { Card } from "@/components/ui/Card"
-import { Badge } from "@/components/ui/Badge"
-import { Modal } from "@/components/ui/Modal"
-import { EmptyState, Skeleton } from "@/components/ui/EmptyState"
-import { formatDate } from "@/lib/utils"
-import api, { getApiErrorMessage } from "@/lib/axios"
-import type { ApiResponse, Role, UserWithFileCount } from "@/types/api"
-import { useAuth } from "@/providers/AuthProvider"
-import { useToast } from "@/providers/ToastProvider"
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
+import { EmptyState, Skeleton } from "@/components/ui/EmptyState";
+import { formatDate } from "@/lib/utils";
+import api, { getApiErrorMessage } from "@/lib/axios";
+import type { ApiResponse, Role, UserWithFileCount } from "@/types/api";
+import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/providers/ToastProvider";
 
 export default function AdminUsersPage() {
-  const { user: currentAdmin } = useAuth()
-  const queryClient = useQueryClient()
-  const { success, error } = useToast()
+  const { user: currentAdmin } = useAuth();
+  const queryClient = useQueryClient();
+  const { success, error } = useToast();
 
-  const [search, setSearch] = useState("")
-  const [roleFilter, setRoleFilter] = useState<Role | "ALL">("ALL")
-  const [page, setPage] = useState(1)
-  const limit = 10
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<Role | "ALL">("ALL");
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-  const [targetUserRole, setTargetUserRole] = useState<UserWithFileCount | null>(null)
-  const [newRole, setNewRole] = useState<Role>("USER")
-  const [isUpdatingRole, setIsUpdatingRole] = useState(false)
+  const [targetUserRole, setTargetUserRole] =
+    useState<UserWithFileCount | null>(null);
+  const [newRole, setNewRole] = useState<Role>("USER");
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
-  const [targetUserDelete, setTargetUserDelete] = useState<UserWithFileCount | null>(null)
-  const [isDeletingUser, setIsDeletingUser] = useState(false)
+  const [targetUserDelete, setTargetUserDelete] =
+    useState<UserWithFileCount | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
 
   // Query users
   const { data, isLoading, isPlaceholderData } = useQuery({
@@ -56,69 +58,77 @@ export default function AdminUsersPage() {
       const params: Record<string, string | number> = {
         page,
         limit,
-      }
-      if (search.trim()) params.search = search.trim()
-      if (roleFilter !== "ALL") params.role = roleFilter
+      };
+      if (search.trim()) params.search = search.trim();
+      if (roleFilter !== "ALL") params.role = roleFilter;
 
-      const res = await api.get<ApiResponse<UserWithFileCount[]>>("/users", { params })
-      return res.data
+      const res = await api.get<ApiResponse<UserWithFileCount[]>>("/users", {
+        params,
+      });
+      return res.data;
     },
-  })
+  });
 
-  const users = data?.data || []
-  const meta = data?.meta || { page: 1, limit: 10, total: 0, totalPages: 1 }
+  const users = data?.data || [];
+  const meta = data?.meta || { page: 1, limit: 10, total: 0, totalPages: 1 };
 
   // Handle Role Change
   const handleUpdateRole = async () => {
-    if (!targetUserRole) return
+    if (!targetUserRole) return;
 
     if (currentAdmin?.id === targetUserRole.id && newRole !== "ADMIN") {
-      error("You cannot demote your own administrator account.", "Action Forbidden")
-      return
+      error(
+        "You cannot demote your own administrator account.",
+        "Action Forbidden",
+      );
+      return;
     }
 
-    setIsUpdatingRole(true)
+    setIsUpdatingRole(true);
     try {
-      await api.patch(`/users/${targetUserRole.id}/role`, { role: newRole })
+      await api.patch(`/users/${targetUserRole.id}/role`, { role: newRole });
       success(
         `Updated role for ${targetUserRole.name} to ${newRole}`,
         "Role Updated",
-      )
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] })
-      setTargetUserRole(null)
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setTargetUserRole(null);
     } catch (err: unknown) {
-      const msg = getApiErrorMessage(err)
-      error(msg, "Role Update Failed")
+      const msg = getApiErrorMessage(err);
+      error(msg, "Role Update Failed");
     } finally {
-      setIsUpdatingRole(false)
+      setIsUpdatingRole(false);
     }
-  }
+  };
 
   // Handle Delete User
   const handleDeleteUser = async () => {
-    if (!targetUserDelete) return
+    if (!targetUserDelete) return;
 
     if (currentAdmin?.id === targetUserDelete.id) {
-      error("You cannot delete your own administrator account.", "Action Forbidden")
-      return
+      error(
+        "You cannot delete your own administrator account.",
+        "Action Forbidden",
+      );
+      return;
     }
 
-    setIsDeletingUser(true)
+    setIsDeletingUser(true);
     try {
-      await api.delete(`/users/${targetUserDelete.id}`)
+      await api.delete(`/users/${targetUserDelete.id}`);
       success(
         `User ${targetUserDelete.name} and all associated files deleted.`,
         "User Deleted",
-      )
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] })
-      setTargetUserDelete(null)
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setTargetUserDelete(null);
     } catch (err: unknown) {
-      const msg = getApiErrorMessage(err)
-      error(msg, "Deletion Failed")
+      const msg = getApiErrorMessage(err);
+      error(msg, "Deletion Failed");
     } finally {
-      setIsDeletingUser(false)
+      setIsDeletingUser(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6 text-slate-900 dark:text-slate-100">
@@ -138,7 +148,8 @@ export default function AdminUsersPage() {
             User Account Management
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            View all registered users, manage administrative roles, and enforce security policies.
+            View all registered users, manage administrative roles, and enforce
+            security policies.
           </p>
         </div>
       </div>
@@ -152,22 +163,24 @@ export default function AdminUsersPage() {
               leftIcon={<Search className="h-4 w-4" />}
               value={search}
               onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(1)
+                setSearch(e.target.value);
+                setPage(1);
               }}
             />
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Role:</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Role:
+            </span>
             <div className="flex items-center gap-1">
               {(["ALL", "USER", "ADMIN"] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => {
-                    setRoleFilter(r)
-                    setPage(1)
+                    setRoleFilter(r);
+                    setPage(1);
                   }}
                   className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
                     roleFilter === r
@@ -218,15 +231,22 @@ export default function AdminUsersPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
                 {users.map((u) => {
-                  const isCurrent = currentAdmin?.id === u.id
+                  const isCurrent = currentAdmin?.id === u.id;
                   return (
-                    <tr key={u.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors">
+                    <tr
+                      key={u.id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors"
+                    >
                       {/* Avatar & Name */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-bold text-xs shrink-0">
                             {u.avatarUrl ? (
-                              <img src={u.avatarUrl} alt={u.name} className="h-full w-full object-cover" />
+                              <img
+                                src={u.avatarUrl}
+                                alt={u.name}
+                                className="h-full w-full object-cover"
+                              />
                             ) : (
                               u.name?.[0]?.toUpperCase() || "U"
                             )}
@@ -240,7 +260,9 @@ export default function AdminUsersPage() {
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">{u.email}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              {u.email}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -286,8 +308,8 @@ export default function AdminUsersPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              setTargetUserRole(u)
-                              setNewRole(u.role)
+                              setTargetUserRole(u);
+                              setNewRole(u.role);
                             }}
                             className="text-xs h-8 px-2.5"
                           >
@@ -297,7 +319,11 @@ export default function AdminUsersPage() {
                             type="button"
                             disabled={isCurrent}
                             onClick={() => setTargetUserDelete(u)}
-                            title={isCurrent ? "You cannot delete yourself" : "Delete User"}
+                            title={
+                              isCurrent
+                                ? "You cannot delete yourself"
+                                : "Delete User"
+                            }
                             className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -305,7 +331,7 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
                     </tr>
-                  )
+                  );
                 })}
               </tbody>
             </table>
@@ -314,10 +340,17 @@ export default function AdminUsersPage() {
 
         {/* Pagination Footer */}
         {meta.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 px-4 py-3 sm:px-6">
+          <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-3 sm:px-6">
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Showing page <span className="font-semibold text-slate-900 dark:text-white">{meta.page}</span> of{" "}
-              <span className="font-semibold text-slate-900 dark:text-white">{meta.totalPages}</span> ({meta.total} users)
+              Showing page{" "}
+              <span className="font-semibold text-slate-900 dark:text-white">
+                {meta.page}
+              </span>{" "}
+              of{" "}
+              <span className="font-semibold text-slate-900 dark:text-white">
+                {meta.totalPages}
+              </span>{" "}
+              ({meta.total} users)
             </div>
 
             <div className="flex items-center gap-2">
@@ -377,7 +410,8 @@ export default function AdminUsersPage() {
         >
           <div className="space-y-4 py-2">
             <div className="text-xs text-slate-600 dark:text-slate-300">
-              Select the new access role for <strong>{targetUserRole.name}</strong> ({targetUserRole.email}):
+              Select the new access role for{" "}
+              <strong>{targetUserRole.name}</strong> ({targetUserRole.email}):
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -454,15 +488,19 @@ export default function AdminUsersPage() {
               <ShieldAlert className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
               <div>
                 <strong>Warning:</strong> This will cascade delete all{" "}
-                <strong>{targetUserDelete._count?.files ?? 0} files</strong> belonging to this user from both the database and Cloudinary storage.
+                <strong>{targetUserDelete._count?.files ?? 0} files</strong>{" "}
+                belonging to this user from both the database and Cloudinary
+                storage.
               </div>
             </div>
             <p>
-              Are you sure you want to delete <strong>{targetUserDelete.name}</strong> ({targetUserDelete.email})?
+              Are you sure you want to delete{" "}
+              <strong>{targetUserDelete.name}</strong> ({targetUserDelete.email}
+              )?
             </p>
           </div>
         </Modal>
       )}
     </div>
-  )
+  );
 }
