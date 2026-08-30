@@ -1,6 +1,6 @@
 import type { Response } from "express"
 
-import type { ErrorCode, ErrorDetail } from "./AppError"
+import type { ErrorCode, ErrorDetail } from "./AppError.js"
 
 /**
  * Response envelope builders (BE-003).

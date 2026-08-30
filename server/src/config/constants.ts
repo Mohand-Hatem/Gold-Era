@@ -1,4 +1,4 @@
-import { env } from "./env"
+import { env } from "./env.js"
 
 /**
  * Application constants (BE-001).
@@ -15,6 +15,17 @@ export const API_PREFIX = "/api"
 export const MAX_FILE_SIZE_BYTES = env.MAX_FILE_SIZE_MB * 1024 * 1024
 export const MAX_FILES_PER_UPLOAD = env.MAX_FILES_PER_UPLOAD
 export const MAX_UPLOAD_REQUEST_BYTES = 50 * 1024 * 1024
+
+/** Empty files are rejected — nothing to store, nothing to extract (ADR-042). */
+export const MIN_FILE_SIZE_BYTES = 1
+
+/**
+ * Cloudinary's free tier caps a single asset at 10 MiB, which is exactly our
+ * per-file limit. A file at precisely the boundary passes our validation and is
+ * then refused by the provider, so that failure is mapped rather than surfaced
+ * as an unhandled error.
+ */
+export const PROVIDER_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 
 /** JSON body limit. Multipart uploads bypass this and use Multer limits. */
 export const JSON_BODY_LIMIT = "100kb"
@@ -44,6 +55,35 @@ export const ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/webp",
 ] as const
+
+/**
+ * Extension → MIME types accepted for it.
+ *
+ * Used to confirm that the extension, the client's declared MIME type, and the
+ * type detected from the actual bytes all agree. Disagreement means either a
+ * confused client or a spoofing attempt; both are rejected (docs/20 §5).
+ *
+ * Plain-text formats have no magic bytes, so they are validated by extension,
+ * declared type, and a UTF-8 decode check instead.
+ */
+export const EXTENSION_MIME_MAP: Record<string, readonly string[]> = {
+  txt: ["text/plain"],
+  md: ["text/markdown", "text/plain", "text/x-markdown"],
+  csv: ["text/csv", "text/plain", "application/csv"],
+  json: ["application/json", "text/plain"],
+  pdf: ["application/pdf"],
+  docx: [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/zip",
+  ],
+  png: ["image/png"],
+  jpg: ["image/jpeg"],
+  jpeg: ["image/jpeg"],
+  webp: ["image/webp"],
+}
+
+/** Extensions with no reliable magic-byte signature. */
+export const MAGIC_BYTE_EXEMPT_EXTENSIONS = ["txt", "md", "csv", "json"] as const
 
 /** Extracted text is truncated to this many characters (ADR-005). */
 export const MAX_EXTRACTED_CONTENT_CHARS = 20_000

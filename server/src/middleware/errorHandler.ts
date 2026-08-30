@@ -2,9 +2,9 @@ import { Prisma } from "@prisma/client"
 import type { NextFunction, Request, Response } from "express"
 import { ZodError } from "zod"
 
-import { isProduction } from "../config/env"
-import { AppError, type ErrorDetail } from "../utils/AppError"
-import { fail } from "../utils/response"
+import { isProduction } from "../config/env.js"
+import { AppError, type ErrorDetail } from "../utils/AppError.js"
+import { fail } from "../utils/response.js"
 
 /**
  * Central error handler (BE-004).

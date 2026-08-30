@@ -58,6 +58,7 @@ model User {
   role            Role    @default(USER)
   /// Gates login (AUTH-006): unverified accounts cannot authenticate.
   isEmailVerified Boolean @default(false)
+  avatarUrl       String?
   /// Bumped to invalidate already-issued JWTs on role change or deletion
   /// (AUTH-013, ADR-007).
   tokenVersion    Int     @default(0)

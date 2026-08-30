@@ -1,6 +1,6 @@
-import { createApp } from "./app"
-import { allowedOrigins } from "./config/cors"
-import { env } from "./config/env"
+import { createApp } from "./app.js"
+import { allowedOrigins } from "./config/cors.js"
+import { env } from "./config/env.js"
 
 /**
  * Process entry point.

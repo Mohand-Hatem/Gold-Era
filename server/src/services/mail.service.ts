@@ -1,7 +1,7 @@
 import nodemailer, { type Transporter } from "nodemailer"
 
-import { env, isProduction } from "../config/env"
-import { OTP_TTL_MS } from "../config/constants"
+import { env, isProduction } from "../config/env.js"
+import { OTP_TTL_MS } from "../config/constants.js"
 
 /**
  * Outbound email (BE-013, ADR-011).
@@ -97,6 +97,9 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
     return true
   } catch (error) {
     console.error(`[mail] failed to send verification code to ${to}:`, error)
+    if (!isProduction) {
+      console.log(`[mail] DEV FALLBACK — verification code for ${to}: ${code}`)
+    }
     return false
   }
 }

@@ -1,22 +1,24 @@
 import { Router } from "express"
+import multer from "multer"
 
-import { authenticate } from "../../middleware/authenticate"
-import { authRateLimit } from "../../middleware/rateLimit"
-import { validate } from "../../middleware/validate"
-import * as controller from "./auth.controller"
+import { authenticate } from "../../middleware/authenticate.js"
+import { authRateLimit } from "../../middleware/rateLimit.js"
+import { validate } from "../../middleware/validate.js"
+import * as controller from "./auth.controller.js"
 import {
   loginSchema,
   registerSchema,
   resendCodeSchema,
   verifyEmailSchema,
-} from "./auth.schemas"
+} from "./auth.schemas.js"
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+})
 
 /**
  * Auth routes — mounted at `${API_PREFIX}/auth` (docs/11 §3).
- *
- * Rate limiting guards the routes an attacker can hammer without credentials.
- * `profile` is excluded: it already requires a valid token, and limiting it
- * would throttle legitimate authenticated browsing.
  */
 export const authRoutes = Router()
 
@@ -28,14 +30,14 @@ authRoutes.post(
 )
 
 authRoutes.post(
-  "/verify-email",
+  ["/verify-email", "/verify-otp"],
   authRateLimit,
   validate({ body: verifyEmailSchema }),
   controller.verifyEmail,
 )
 
 authRoutes.post(
-  "/resend-code",
+  ["/resend-code", "/resend-otp"],
   authRateLimit,
   validate({ body: resendCodeSchema }),
   controller.resendCode,
@@ -43,9 +45,12 @@ authRoutes.post(
 
 authRoutes.post("/login", authRateLimit, validate({ body: loginSchema }), controller.login)
 
-// Public and idempotent — see auth.controller.logout for the rationale.
+// Public and idempotent
 authRoutes.post("/logout", controller.logout)
 
-authRoutes.get("/profile", authenticate, controller.profile)
+authRoutes.get(["/profile", "/me"], authenticate, controller.profile)
+
+// Avatar photo upload for user profile
+authRoutes.post("/avatar", authenticate, upload.single("avatar"), controller.uploadAvatar)
 
 export default authRoutes

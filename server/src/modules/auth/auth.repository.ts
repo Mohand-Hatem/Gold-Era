@@ -1,6 +1,6 @@
 import type { Prisma, User, VerificationCode } from "@prisma/client"
 
-import { prisma } from "../../config/prisma"
+import { prisma } from "../../config/prisma.js"
 
 /**
  * Auth data access (docs/15).
@@ -16,6 +16,7 @@ export const PUBLIC_USER_SELECT = {
   email: true,
   role: true,
   isEmailVerified: true,
+  avatarUrl: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.UserSelect
@@ -31,6 +32,14 @@ export async function findUserByEmail(email: string): Promise<User | null> {
 
 export async function findPublicUserById(id: string): Promise<PublicUser | null> {
   return prisma.user.findUnique({ where: { id }, select: PUBLIC_USER_SELECT })
+}
+
+export async function updateUserAvatar(userId: string, avatarUrl: string): Promise<PublicUser> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { avatarUrl },
+    select: PUBLIC_USER_SELECT,
+  })
 }
 
 /**

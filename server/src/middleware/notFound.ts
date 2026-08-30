@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express"
 
-import { AppError } from "../utils/AppError"
+import { AppError } from "../utils/AppError.js"
 
 /**
  * Catches requests that matched no route and converts them into a standard

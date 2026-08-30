@@ -1,7 +1,7 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express"
 import { ZodError, type ZodType } from "zod"
 
-import { AppError, type ErrorDetail } from "../utils/AppError"
+import { AppError, type ErrorDetail } from "../utils/AppError.js"
 
 /**
  * Request validation middleware (BE-005).

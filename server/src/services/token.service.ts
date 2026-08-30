@@ -2,8 +2,8 @@ import type { Role } from "@prisma/client"
 import type { CookieOptions, Request, Response } from "express"
 import jwt from "jsonwebtoken"
 
-import { AUTH_COOKIE_MAX_AGE_MS, AUTH_COOKIE_NAME } from "../config/constants"
-import { env } from "../config/env"
+import { AUTH_COOKIE_MAX_AGE_MS, AUTH_COOKIE_NAME } from "../config/constants.js"
+import { env } from "../config/env.js"
 
 /**
  * JWT issuing/verification and auth-cookie handling (BE-011, ADR-007, ADR-008).

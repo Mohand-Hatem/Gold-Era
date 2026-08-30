@@ -1,7 +1,7 @@
 import type { Role } from "@prisma/client"
 import type { NextFunction, Request, RequestHandler, Response } from "express"
 
-import { AppError } from "../utils/AppError"
+import { AppError } from "../utils/AppError.js"
 
 /**
  * Role-based authorization (BE-015, AUTH-010, docs/08).

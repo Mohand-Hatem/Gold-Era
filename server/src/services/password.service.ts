@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt"
 
-import { BCRYPT_COST } from "../config/constants"
+import { BCRYPT_COST } from "../config/constants.js"
 
 /**
  * Password hashing (BE-010, ADR-018, NFR-001).

@@ -1,6 +1,6 @@
 import cors, { type CorsOptions } from "cors"
 
-import { env, isDevelopment } from "./env"
+import { env, isDevelopment } from "./env.js"
 
 /**
  * Credentialed CORS configuration (BE-002, SYS-003, ADR-008).

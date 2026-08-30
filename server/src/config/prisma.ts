@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client"
 
-import { isProduction } from "./env"
+import { isProduction } from "./env.js"
 
 /**
  * Prisma client singleton (DB-001b).

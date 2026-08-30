@@ -9,7 +9,7 @@ import {
   OTP_MAX_VERIFY_ATTEMPTS,
   OTP_RESEND_COOLDOWN_MS,
   OTP_TTL_MS,
-} from "../config/constants"
+} from "../config/constants.js"
 
 /**
  * One-time verification code policy (BE-012, ADR-010).

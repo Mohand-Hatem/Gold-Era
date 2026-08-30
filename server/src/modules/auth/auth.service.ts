@@ -1,5 +1,5 @@
-import { OTP_MAX_VERIFY_ATTEMPTS } from "../../config/constants"
-import { sendOtpEmail } from "../../services/mail.service"
+import { OTP_MAX_VERIFY_ATTEMPTS } from "../../config/constants.js"
+import { sendOtpEmail } from "../../services/mail.service.js"
 import {
   generateOtpCode,
   hasAttemptsRemaining,
@@ -10,19 +10,16 @@ import {
   resendCooldownRemainingMs,
   resendWindowStart,
   verifyOtpCode,
-} from "../../services/otp.service"
-import { comparePassword, compareDummy, hashPassword } from "../../services/password.service"
-import { signAuthToken } from "../../services/token.service"
-import { AppError } from "../../utils/AppError"
-import * as repo from "./auth.repository"
-import type { PublicUser } from "./auth.repository"
-import type { LoginInput, RegisterInput, ResendCodeInput, VerifyEmailInput } from "./auth.schemas"
+} from "../../services/otp.service.js"
+import { comparePassword, compareDummy, hashPassword } from "../../services/password.service.js"
+import { signAuthToken } from "../../services/token.service.js"
+import { AppError } from "../../utils/AppError.js"
+import * as repo from "./auth.repository.js"
+import type { PublicUser } from "./auth.repository.js"
+import type { LoginInput, RegisterInput, ResendCodeInput, VerifyEmailInput } from "./auth.schemas.js"
 
 /**
  * Auth business logic (docs/12).
- *
- * Owns every authentication decision and throws AppError on failure. Knows
- * nothing about HTTP — the controller shapes responses and manages cookies.
  */
 
 /** Issues a fresh code for a user and emails it. Assumes eligibility is checked. */
@@ -33,8 +30,6 @@ async function issueVerificationCode(userId: string, email: string): Promise<voi
   await repo.consumeAllActiveCodes(userId)
   await repo.createCode({ userId, codeHash, expiresAt: otpExpiryDate() })
 
-  // Delivery is best-effort: a failure here is recoverable through resend,
-  // whereas failing the request would leave the account unreachable (ADR-011).
   await sendOtpEmail(email, code)
 }
 
@@ -59,8 +54,6 @@ export async function register(
     expiresAt: otpExpiryDate(),
   })
 
-  // Sent after the transaction commits: an SMTP round-trip inside a transaction
-  // would hold a database connection open for its full duration.
   await sendOtpEmail(user.email, code)
 
   return { userId: user.id, email: user.email }
@@ -73,7 +66,6 @@ export async function verifyEmail(input: VerifyEmailInput): Promise<{ alreadyVer
     throw AppError.notFound("ERR_USER_NOT_FOUND", "No account found for this email")
   }
 
-  // Idempotent: re-verifying is not an error (docs/12 §3).
   if (user.isEmailVerified) {
     return { alreadyVerified: true }
   }
@@ -87,7 +79,6 @@ export async function verifyEmail(input: VerifyEmailInput): Promise<{ alreadyVer
     throw AppError.badRequest("ERR_OTP_EXPIRED", "Verification code has expired. Request a new one.")
   }
 
-  // Checked before comparing so a locked code cannot be brute-forced further.
   if (!hasAttemptsRemaining(record.attempts)) {
     throw AppError.tooManyRequests(
       "ERR_OTP_ATTEMPTS",
@@ -158,8 +149,6 @@ export async function login(input: LoginInput): Promise<{ user: PublicUser; toke
   const user = await repo.findUserByEmail(input.email)
 
   if (!user) {
-    // Burn an equivalent bcrypt comparison so response timing does not reveal
-    // whether the email is registered (docs/20 §1).
     await compareDummy(input.password)
     throw AppError.invalidCredentials()
   }
@@ -189,6 +178,7 @@ export async function login(input: LoginInput): Promise<{ user: PublicUser; toke
       email: user.email,
       role: user.role,
       isEmailVerified: user.isEmailVerified,
+      avatarUrl: user.avatarUrl ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     },
@@ -203,4 +193,9 @@ export async function getProfile(userId: string): Promise<PublicUser> {
     throw AppError.notFound("ERR_USER_NOT_FOUND", "Account no longer exists")
   }
   return user
+}
+
+/** Updates user avatar profile picture. */
+export async function updateAvatar(userId: string, avatarUrl: string): Promise<PublicUser> {
+  return repo.updateUserAvatar(userId, avatarUrl)
 }

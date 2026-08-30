@@ -1,17 +1,16 @@
 import type { Request, Response } from "express"
 
-import { clearAuthCookie, setAuthCookie } from "../../services/token.service"
-import { AppError } from "../../utils/AppError"
-import { asyncHandler } from "../../utils/asyncHandler"
-import { ok } from "../../utils/response"
-import * as service from "./auth.service"
-import type { LoginInput, RegisterInput, ResendCodeInput, VerifyEmailInput } from "./auth.schemas"
+import { clearAuthCookie, setAuthCookie } from "../../services/token.service.js"
+import { uploadBlob } from "../../services/storage.service.js"
+import { extractExtension } from "../../utils/sanitizeFilename.js"
+import { AppError } from "../../utils/AppError.js"
+import { asyncHandler } from "../../utils/asyncHandler.js"
+import { ok } from "../../utils/response.js"
+import * as service from "./auth.service.js"
+import type { LoginInput, RegisterInput, ResendCodeInput, VerifyEmailInput } from "./auth.schemas.js"
 
 /**
  * Auth HTTP layer (docs/15).
- *
- * Shapes requests and responses only — every decision lives in auth.service.
- * Bodies are already validated and coerced by `validate` middleware.
  */
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
@@ -51,14 +50,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   ok(res, { user })
 })
 
-/**
- * Public and idempotent by design.
- *
- * docs/11 lists this as authenticated, but requiring a valid token creates a
- * dead end: once the token expires the cookie can never be cleared and the
- * browser keeps sending it. Clearing a cookie the caller already holds grants no
- * capability, so this always succeeds (ADR-036).
- */
 export const logout = asyncHandler(async (_req: Request, res: Response) => {
   clearAuthCookie(res)
   ok(res, { message: "Logged out" })
@@ -71,4 +62,24 @@ export const profile = asyncHandler(async (req: Request, res: Response) => {
 
   const user = await service.getProfile(req.user.id)
   ok(res, user)
+})
+
+export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw AppError.unauthenticated()
+  }
+
+  if (!req.file) {
+    throw AppError.badRequest("ERR_NO_FILE", "No image file uploaded for avatar")
+  }
+
+  if (!req.file.mimetype.startsWith("image/")) {
+    throw AppError.badRequest("ERR_INVALID_MIME", "Avatar must be an image format (JPEG, PNG, WebP)")
+  }
+
+  const ext = extractExtension(req.file.originalname) || "png"
+  const stored = await uploadBlob(req.file.buffer, ext, req.file.mimetype)
+
+  const updatedUser = await service.updateAvatar(req.user.id, stored.secureUrl)
+  ok(res, updatedUser)
 })

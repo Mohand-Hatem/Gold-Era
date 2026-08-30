@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from "express"
 
-import { prisma } from "../config/prisma"
-import { extractToken, verifyAuthToken } from "../services/token.service"
-import { AppError } from "../utils/AppError"
+import { prisma } from "../config/prisma.js"
+import { extractToken, verifyAuthToken } from "../services/token.service.js"
+import { AppError } from "../utils/AppError.js"
 
 /**
  * Session verification (BE-014, AUTH-009).

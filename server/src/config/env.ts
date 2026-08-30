@@ -40,6 +40,13 @@ const envSchema = z.object({
   GMAIL_USER: z.string().optional(),
   GMAIL_PASS: z.string().optional(),
 
+  // ── Blob storage: Cloudinary (ADR-039) ──────────────────────────────────
+  CLOUDINARY_CLOUD_NAME: z.string().min(1, "CLOUDINARY_CLOUD_NAME is required"),
+  CLOUDINARY_API_KEY: z.string().min(1, "CLOUDINARY_API_KEY is required"),
+  CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET is required"),
+  /** Folder prefix for uploaded assets, so the account stays tidy. */
+  CLOUDINARY_FOLDER: z.string().min(1).default("filox"),
+
   // ── CORS + cookie behaviour (ADR-008) ───────────────────────────────────
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
   COOKIE_SECURE: z
@@ -51,7 +58,6 @@ const envSchema = z.object({
   // ── Upload limits (ADR-002, consumed from Phase 5) ──────────────────────
   MAX_FILE_SIZE_MB: z.coerce.number().int().positive().default(10),
   MAX_FILES_PER_UPLOAD: z.coerce.number().int().positive().default(5),
-  UPLOAD_DIR: z.string().min(1).default("uploads"),
 
   // ── OTP policy (ADR-010, consumed from Phase 4) ─────────────────────────
   OTP_TTL_MINUTES: z.coerce.number().int().positive().default(10),

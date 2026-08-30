@@ -1,12 +1,15 @@
 import cookieParser from "cookie-parser"
 import express, { type Express, type Request, type Response } from "express"
 
-import { API_PREFIX, JSON_BODY_LIMIT } from "./config/constants"
-import { corsMiddleware } from "./config/cors"
-import { errorHandler } from "./middleware/errorHandler"
-import { notFound } from "./middleware/notFound"
-import { requestLogger } from "./middleware/requestLogger"
-import { authRoutes } from "./modules/auth/auth.routes"
+import { API_PREFIX, JSON_BODY_LIMIT } from "./config/constants.js"
+import { corsMiddleware } from "./config/cors.js"
+import { errorHandler } from "./middleware/errorHandler.js"
+import { notFound } from "./middleware/notFound.js"
+import { requestLogger } from "./middleware/requestLogger.js"
+import { authRoutes } from "./modules/auth/auth.routes.js"
+import { fileRoutes } from "./modules/files/files.routes.js"
+import { statsRoutes } from "./modules/stats/stats.routes.js"
+import { userRoutes } from "./modules/users/users.routes.js"
 
 /**
  * Composes the Express application.
@@ -46,10 +49,9 @@ export function createApp(): Express {
 
   // ── API routers ───────────────────────────────────────────────────────────
   app.use(`${API_PREFIX}/auth`, authRoutes)
-  // Mounted in later phases:
-  //   app.use(`${API_PREFIX}/users`, userRoutes)   Phase 6
-  //   app.use(`${API_PREFIX}/files`, fileRoutes)   Phase 5
-  //   app.use(`${API_PREFIX}/stats`, statsRoutes)  Phase 6
+  app.use(`${API_PREFIX}/files`, fileRoutes)
+  app.use(`${API_PREFIX}/users`, userRoutes)
+  app.use(`${API_PREFIX}/stats`, statsRoutes)
 
   // ── Terminal middleware ───────────────────────────────────────────────────
   app.use(notFound)
@@ -58,4 +60,5 @@ export function createApp(): Express {
   return app
 }
 
-export default createApp
+export const app = createApp()
+export default app

@@ -1,8 +1,8 @@
 import rateLimit from "express-rate-limit"
 
-import { AUTH_RATE_LIMIT_MAX } from "../config/constants"
-import { env, isTest } from "../config/env"
-import { AppError } from "../utils/AppError"
+import { AUTH_RATE_LIMIT_MAX } from "../config/constants.js"
+import { env, isTest } from "../config/env.js"
+import { AppError } from "../utils/AppError.js"
 
 /**
  * Rate limiting (BE-017, P1, SYS-004, docs/20 §9).

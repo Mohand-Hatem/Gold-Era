@@ -1,698 +1,284 @@
-# Managing Your Files
+# Filox — Cloud Document & File Management System
 
-A full-stack file management system built as part of a Full Stack Developer technical assessment.
+A production-ready full-stack document and file management platform built with **Next.js 16 (App Router)**, **Express 5**, **TypeScript**, **Prisma ORM**, **Neon PostgreSQL**, and **Cloudinary**.
 
-The application allows authenticated users to securely upload, organize, search, and manage their files, while administrators can manage users, files, and system statistics through a dedicated admin dashboard.
+Developed as a comprehensive Full Stack Developer technical assessment adhering strictly to industry standards, modular monolith architecture, and security best practices.
 
-## 🚀 Live Demo
+---
 
-- **Frontend:** `YOUR_FRONTEND_URL`
-- **Backend API:** `YOUR_BACKEND_URL`
+## 🚀 Live Deployments
 
-## 📌 Project Overview
+- **Frontend Application (Vercel):** `YOUR_FRONTEND_URL`
+- **Backend REST API (Vercel / Render):** `YOUR_BACKEND_URL`
+- **Default Seeded Admin Account:**
+  - **Email:** `admin@example.com`
+  - **Password:** `Admin123` *(Note: Change in production)*
 
-Managing Your Files is a modern full-stack application designed around secure file management and role-based access control.
+---
 
-The system provides:
+## 📌 Features Overview
 
-- User registration and authentication
-- Email verification using OTP
-- JWT authentication
-- Role-based authorization
-- Multiple file uploads
-- Drag & drop uploads
-- Upload progress tracking
-- File validation
-- File metadata and extracted content
-- Search, filtering, sorting, and pagination
-- User statistics and dashboards
-- Admin user management
-- Admin file management
-- Admin statistics
-- Responsive and modern UI
+### 🔐 Authentication & Session Security
+- **Registration & Email OTP:** 6-digit numeric verification codes delivered via Gmail SMTP (with automated development terminal fallback).
+- **Rate-Limited Resend:** 60-second cooldown timer and 5 resends/hour cap to prevent abuse.
+- **Session Tokens:** Signed JWT access tokens transmitted exclusively via `httpOnly`, `Secure`, `SameSite` cookies (resistant to XSS and token theft).
+- **Session Invalidation:** Automatic `tokenVersion` increments on role modifications and cascade deletions.
+- **Idempotent Logout:** Reliable session cookie clearance without requiring active credentials.
+
+### 📁 Document & File Operations
+- **Multi-File Upload Zone:** Interactive drag-and-drop zone supporting up to 5 files per batch (max 10 MB per file).
+- **Format Allowlist & Validation:** PDF, DOCX, CSV, JSON, TXT, Markdown, PNG, JPEG, and WebP.
+- **Magic-Byte Sniffing:** Verifies true binary signatures to prevent malicious extension spoofing.
+- **Automated Text Extraction:** Server-side parsing for PDF (`pdf-parse`), Word (`mammoth`), CSV, and plain text without blocking upload completion.
+- **Authenticated Cloud Storage:** Files are stored as authenticated blobs in Cloudinary, ensuring persistence across serverless dyno restarts.
+- **Display Sanitization:** Sanitizes filenames against directory traversal (`..\`) and OS-reserved characters while storing unguessable internal UUIDs.
+
+### 🔎 Explorer, Search & Filtering
+- **Deep Search:** Live keyword search querying both original filenames and extracted document text.
+- **Category Filter Chips:** Instant filtering across `Documents`, `Images`, `Spreadsheets / Code`, and `Archives`.
+- **Dynamic Sorting:** Sort by upload date (newest/oldest), file size (largest/smallest), and alphabetical name.
+- **Pagination:** Responsive pagination controls with page indicators and boundary protection.
+- **Details & Extracted Content Viewer:** Dedicated file inspector featuring formatted metadata, SHA-256 checksums, and a 1-click **Copy Text** button.
+- **Downloads & Stream Preview:** Authenticated inline image preview and attachment download streams.
+
+### 📊 Dashboards & Analytics
+- **Personal Vault Dashboard:** Real-time file count, storage capacity bar (out of 500 MB quota), and **Recharts** category distribution charts.
+- **Admin System Overview:** System-wide metrics, 30-day platform upload activity curves (AreaChart), and global file format donut charts (PieChart).
+- **Admin User Governance:** Searchable user directory, role switcher (`USER` ↔ `ADMIN`), self-demotion prevention (`ERR_SELF_DEMOTE`), and cascade user deletion (`ERR_SELF_DELETE`).
+
+---
 
 ## 🛠️ Technology Stack
 
-### Frontend
+```text
+Frontend:
+  ├── Framework: Next.js 16.3.3 (App Router with Turbopack)
+  ├── Language: TypeScript 5.9
+  ├── Styling: Tailwind CSS & Lucide Icons
+  ├── Data Fetching: TanStack React Query v5 & Axios
+  └── Data Visualization: Recharts
 
-- Next.js (App Router)
-- TypeScript
-- Tailwind CSS
-- Framer Motion
-- TanStack React Query
-- Axios
+Backend:
+  ├── Framework: Express 5.2 (Modular Monolith)
+  ├── Language: TypeScript 5.9
+  ├── Database ORM: Prisma 6.19 (PostgreSQL / Neon)
+  ├── Security: Bcrypt (cost 12), JSONWebToken, Express Rate Limit
+  ├── File Ingestion: Multer (Memory Storage) & File-Type (Magic Bytes)
+  ├── Text Extraction: pdf-parse, mammoth, csv-parse
+  ├── Cloud Storage: Cloudinary (Authenticated Blobs)
+  ├── Email: Nodemailer (Gmail SMTP + Dev Console Fallback)
+  └── Test Runner: Vitest & Supertest
+```
 
-### Backend
+---
 
-- Node.js
-- Express.js
-- TypeScript
-- Prisma ORM
-- PostgreSQL
-- JWT
-- Multer
-
-### Development & Deployment
-
-- Git / GitHub
-- Vercel
-- Railway / Render
-- PostgreSQL
-
-## 🏗️ Architecture
-
-The project follows a modular architecture with a clear separation between frontend and backend.
+## 🏗️ Architecture & Repository Structure
 
 ```text
 Managing-Your-Files/
-│
-├── client/                      # Next.js frontend
+├── client/                     # Next.js 16 App Router Frontend
 │   ├── app/
+│   │   ├── (public)/           # Landing, Login, Register, Verify Email
+│   │   └── (protected)/        # Dashboard, My Files, File Details, Admin
 │   ├── components/
-│   ├── features/
-│   ├── hooks/
-│   ├── lib/
-│   ├── services/
-│   ├── providers/
-│   ├── types/
-│   └── utils/
+│   │   ├── ui/                 # Accessible UI Primitives (Button, Modal, Card, Badge)
+│   │   ├── layout/             # Navbar, Sidebar, Header, Footer
+│   │   └── files/              # FileUploadModal, DeleteFileModal
+│   ├── providers/              # AuthProvider, ToastProvider, QueryProvider
+│   └── lib/                    # Axios client & formatting utilities
 │
-├── server/                      # Express backend
+├── server/                     # Express 5 Backend REST API
+│   ├── prisma/
+│   │   ├── schema.prisma       # Database schema (User, VerificationCode, File)
+│   │   ├── migrations/         # PostgreSQL migration history
+│   │   └── seed.ts             # Idempotent Admin user seed script
 │   ├── src/
-│   │   ├── config/
+│   │   ├── config/             # Environment, Prisma, CORS, Cloudinary, Constants
+│   │   ├── middleware/         # Auth, RBAC, Upload, Zod Validate, RateLimit, ErrorHandler
 │   │   ├── modules/
-│   │   │   ├── auth/
-│   │   │   ├── users/
-│   │   │   ├── files/
-│   │   │   └── stats/
-│   │   ├── middleware/
-│   │   ├── utils/
-│   │   ├── app.ts
-│   │   └── server.ts
-│   │
-│   └── prisma/
-│       └── schema.prisma
+│   │   │   ├── auth/           # Register, Verify OTP, Resend, Login, Logout, Profile
+│   │   │   ├── files/          # Upload, List, Details, Stream Download, Delete
+│   │   │   ├── users/          # Admin User Management & Role Updates
+│   │   │   └── stats/          # Personal & System-wide Metrics
+│   │   ├── services/           # Token, Password, OTP, Mail, Storage, Extraction
+│   │   └── utils/              # AppError, Response envelopes, Sanitizer
+│   ├── tests/                  # Vitest + Supertest automated suites
+│   ├── api/index.ts            # Vercel Serverless Function entry point
+│   ├── vercel.json             # Vercel deployment configuration
+│   └── render.yaml             # Render Infrastructure-as-Code blueprint
 │
-└── docs/                        # Project documentation
+└── docs/                       # Complete 35-Document Architectural Package
 ```
 
-## 👥 User Roles
+---
 
-### User
+## ⚙️ Environment Variables Reference
 
-Authenticated users can:
-
-- Manage their profile
-- Upload files
-- Upload multiple files
-- Drag and drop files
-- View their own files
-- Search files
-- Filter files
-- Sort files
-- Paginate files
-- View file details
-- View file metadata
-- View extracted content
-- Delete their own files
-- View personal statistics
-
-### Admin
-
-Administrators can:
-
-- Access the admin dashboard
-- View system statistics
-- View users
-- Search users
-- Update user roles
-- Delete users
-- View all files
-- Search files
-- Filter files
-- Delete files
-- View recent uploads
-
-> Admin authorization is enforced on the backend. Frontend route protection is used additionally for user experience and navigation control.
-
-## 🔐 Authentication & Authorization
-
-The application implements:
-
-- User registration
-- Password hashing
-- Email verification through OTP
-- OTP resend
-- JWT-based authentication
-- Protected routes
-- Role-based authorization
-- User/Admin permissions
-- Token expiration handling
-
-### Authentication Flow
-
-```text
-Register
-   ↓
-Create User
-   ↓
-Generate OTP
-   ↓
-Send Verification Email
-   ↓
-Verify Email
-   ↓
-Login
-   ↓
-Issue JWT
-   ↓
-Access Protected Resources
-```
-
-## 📁 File Management
-
-Users can upload and manage files through a dedicated file management interface.
-
-### Upload Features
-
-- Drag & Drop
-- Multiple files
-- Upload progress
-- Client-side validation
-- Server-side validation
-- File size validation
-- File type validation
-- Metadata extraction
-- Content extraction where supported
-
-### File Information
-
-The application can display:
-
-- Original file name
-- File type
-- MIME type
-- File size
-- Upload date
-- Extracted content
-- File URL/path where applicable
-
-## 🔎 File Search, Filter & Pagination
-
-The file management interface supports:
-
-- Keyword search
-- File type filtering
-- Sorting
-- Pagination
-- Empty states
-- Loading states
-- Error handling
-
-## 📊 Statistics
-
-### User Dashboard
-
-Users can view:
-
-- Total uploaded files
-- Storage usage
-- File type distribution
-- Upload history
-
-### Admin Dashboard
-
-Administrators can view:
-
-- Total users
-- Total files
-- Storage usage
-- Most uploaded file types
-- Recent uploads
-
-## 🗄️ Database
-
-The application uses Prisma ORM with PostgreSQL.
-
-### Main Entities
-
-```text
-User
- ├── VerificationCode
- └── File
-```
-
-### User
-
-Stores:
-
-- Account information
-- Authentication data
-- Role
-- Email verification status
-- Timestamps
-
-### VerificationCode
-
-Stores:
-
-- Verification code
-- Associated user
-- Expiration
-- Creation timestamp
-
-### File
-
-Stores:
-
-- File ownership
-- Original file name
-- File type
-- MIME type
-- Size
-- Storage information
-- Extracted content
-- Timestamps
-
-## 🌐 API
-
-The backend exposes RESTful APIs.
-
-### Authentication
-
-```http
-POST /auth/register
-POST /auth/login
-POST /auth/verify-email
-POST /auth/resend-code
-GET  /auth/profile
-```
-
-### Users
-
-```http
-GET    /users
-PATCH  /users/:id
-DELETE /users/:id
-```
-
-### Files
-
-```http
-POST   /files/upload
-GET    /files
-GET    /files/:id
-DELETE /files/:id
-```
-
-### Statistics
-
-```http
-GET /stats/user
-GET /stats/admin
-```
-
-Authentication and authorization requirements vary by endpoint.
-
-## ⚙️ Environment Variables
-
-### Frontend
-
-Create a `.env.local` file:
-
+### Frontend (`client/.env.local`)
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
 
-### Backend
-
-Create a `.env` file:
-
+### Backend (`server/.env`)
 ```env
 PORT=8080
+NODE_ENV=development
 
-DATABASE_URL=
+DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
+DIRECT_URL="postgresql://user:password@host/dbname?sslmode=require"
 
-JWT_SECRET=
+JWT_SECRET=your-secure-32-byte-secret-key
+JWT_EXPIRES_IN=7d
 
 ADMIN_EMAIL=admin@example.com
 ADMIN_NAME=Admin
 ADMIN_PASSWORD=Admin123
 
-GMAIL_USER=
-GMAIL_PASS=
+GMAIL_USER=your_email@gmail.com
+GMAIL_PASS=your_16_character_app_password
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+CLOUDINARY_FOLDER=filox
+
+FRONTEND_URL=http://localhost:3000
+COOKIE_SECURE=false
+COOKIE_SAMESITE=lax
+
+MAX_FILE_SIZE_MB=10
+MAX_FILES_PER_UPLOAD=5
+OTP_TTL_MINUTES=10
 ```
-
-Never commit `.env` files or production secrets to GitHub.
-
-## 📦 Installation
-
-### Prerequisites
-
-Make sure you have installed:
-
-- Node.js 20+
-- npm
-- PostgreSQL
-- Git
-
-### Clone the Repository
-
-```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
-cd Managing-Your-Files
-```
-
-## ▶️ Backend Setup
-
-```bash
-cd server
-npm install
-```
-
-Configure the `.env` file, then run Prisma migrations:
-
-```bash
-npx prisma migrate dev
-```
-
-Generate Prisma Client:
-
-```bash
-npx prisma generate
-```
-
-Start the development server:
-
-```bash
-npm run dev
-```
-
-The backend will run on:
-
-```text
-http://localhost:8080
-```
-
-## ▶️ Frontend Setup
-
-Open another terminal:
-
-```bash
-cd client
-npm install
-```
-
-Create `.env.local`:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8080
-```
-
-Start the development server:
-
-```bash
-npm run dev
-```
-
-The frontend will run on:
-
-```text
-http://localhost:3000
-```
-
-## 🔄 Development Workflow
-
-Recommended implementation order:
-
-```text
-1. Project Setup
-2. Database Design
-3. Backend Foundation
-4. Authentication
-5. Authorization
-6. File Upload
-7. File Management
-8. Statistics
-9. Frontend Foundation
-10. Authentication UI
-11. File Management UI
-12. User Dashboard
-13. Admin Dashboard
-14. Frontend/Backend Integration
-15. Testing
-16. Deployment
-17. Final Review
-```
-
-## 🧪 Testing
-
-The project should focus testing on critical business flows.
-
-### Authentication
-
-- Registration
-- Duplicate email
-- OTP verification
-- Invalid OTP
-- Expired OTP
-- Resend OTP
-- Login
-- Invalid credentials
-- Protected routes
-
-### Authorization
-
-- User accessing own resources
-- User accessing another user's resources
-- Admin-only endpoints
-- Unauthorized role access
-
-### File Management
-
-- Valid upload
-- Multiple upload
-- Invalid file type
-- File too large
-- Empty upload
-- Upload failure
-- File deletion
-- File ownership
-
-### Query Features
-
-- Search
-- Filtering
-- Sorting
-- Pagination
-
-## 🔒 Security Considerations
-
-The application considers:
-
-- Password hashing
-- JWT validation
-- Role-based authorization
-- Input validation
-- File type validation
-- File size limits
-- Secure environment variables
-- CORS configuration
-- OTP expiration
-- OTP abuse protection
-- Unauthorized file access
-- Filename/path security
-- Database access through Prisma
-
-## 📱 Responsive Design
-
-The frontend is designed to support:
-
-- Desktop
-- Tablet
-- Mobile
-
-The UI includes responsive layouts, reusable components, loading states, empty states, error states, and toast notifications.
-
-## 🎨 UI / UX
-
-The interface uses:
-
-- Tailwind CSS for styling
-- Framer Motion for animations
-- Responsive layouts
-- Reusable UI components
-- Consistent form validation
-- Loading indicators
-- Error feedback
-- Toast notifications
-
-## 📚 Documentation
-
-Detailed project documentation is available inside:
-
-```text
-docs/
-```
-
-The documentation covers:
-
-- Product Requirements
-- Software Requirements
-- Business Flows
-- User Flows
-- Use Cases
-- Database Design
-- ERD
-- API Specification
-- Authentication
-- File Upload Architecture
-- Frontend Architecture
-- Backend Architecture
-- Security
-- Testing
-- Deployment
-- Development Phases
-- Requirements Traceability
-- Acceptance Criteria
-
-## 🚀 Deployment
-
-### Frontend
-
-Recommended platform:
-
-```text
-Vercel
-```
-
-Configure:
-
-```env
-NEXT_PUBLIC_API_URL=YOUR_PRODUCTION_API_URL
-```
-
-### Backend
-
-Recommended platforms:
-
-```text
-Railway
-Render
-Fly.io
-```
-
-Configure all required production environment variables.
-
-### Database
-
-Use a managed PostgreSQL database in production.
-
-Before starting the production server:
-
-```bash
-npx prisma migrate deploy
-npx prisma generate
-```
-
-## 🏥 Health Check
-
-The backend should expose a simple health endpoint for deployment and monitoring.
-
-Example:
-
-```http
-GET /health
-```
-
-Expected response:
-
-```json
-{
-  "status": "ok"
-}
-```
-
-## 📌 Assumptions
-
-Where the assessment did not define specific behavior, reasonable technical assumptions were made and documented separately.
-
-Examples include:
-
-- Maximum file size
-- Supported file formats
-- OTP expiration
-- Pagination defaults
-- File deletion behavior
-- Content extraction scope
-- Token expiration
-- Duplicate file behavior
-
-See:
-
-```text
-docs/30-Assumptions-and-Decisions.md
-```
-
-## ⚖️ Scope & Trade-offs
-
-This project is designed as an 8–10 hour technical assessment.
-
-The implementation prioritizes:
-
-1. Core business requirements
-2. Authentication and authorization
-3. File management
-4. Admin functionality
-5. API quality
-6. Security
-7. Responsive UX
-8. Testing of critical flows
-
-Optional features such as advanced OCR, complex folder hierarchies, collaboration, and microservices are intentionally outside the core MVP scope unless additional time is available.
-
-## ✅ Final Submission Checklist
-
-Before submitting the assessment:
-
-- [ ] Frontend works in production
-- [ ] Backend works in production
-- [ ] Database is connected
-- [ ] Registration works
-- [ ] Login works
-- [ ] OTP verification works
-- [ ] JWT authentication works
-- [ ] User/Admin authorization works
-- [ ] File upload works
-- [ ] Multiple upload works
-- [ ] File validation works
-- [ ] File listing works
-- [ ] Search works
-- [ ] Filter works
-- [ ] Sort works
-- [ ] Pagination works
-- [ ] File details work
-- [ ] File deletion works
-- [ ] User statistics work
-- [ ] Admin dashboard works
-- [ ] Admin user management works
-- [ ] Admin file management works
-- [ ] Error handling works
-- [ ] Responsive design works
-- [ ] Environment variables are configured
-- [ ] No secrets are committed
-- [ ] README is complete
-- [ ] GitHub repository is clean
-- [ ] Production URLs are working
-
-## 👨‍💻 Author
-
-**Mohand Hatem**
-
-Full Stack Web Developer
 
 ---
 
-## 📄 License
+## 🚀 Quick Start — Local Development
 
-This project was developed as part of a technical hiring assessment.
+### 1. Prerequisites
+- **Node.js**: `v20.x` or higher
+- **PostgreSQL**: Local instance or free [Neon](https://neon.tech) cloud database
+
+### 2. Backend Setup
+```bash
+cd server
+npm install
+
+# Create .env from template and configure DATABASE_URL
+cp .env.example .env
+
+# Run database migrations and seed default admin
+npx prisma migrate dev
+npm run db:seed
+
+# Start backend development server (runs on port 8080)
+npm run dev
+```
+
+### 3. Frontend Setup
+```bash
+# In a separate terminal
+cd client
+npm install
+
+# Create .env.local
+cp .env.local.example .env.local
+
+# Start Next.js development server (runs on port 3000)
+npm run dev
+```
+
+Visit **`http://localhost:3000`** in your browser to access the application.
+
+---
+
+## 🌐 API Reference Matrix
+
+All endpoints are prefixed with `/api` (except `/health`) and use standardized response envelopes:
+
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| `GET` | `/health` | Public | Platform health & uptime probe |
+| `POST` | `/api/auth/register` | Public | Register new user & send OTP |
+| `POST` | `/api/auth/verify-email` | Public | Verify 6-digit OTP code |
+| `POST` | `/api/auth/resend-code` | Public | Request fresh OTP code |
+| `POST` | `/api/auth/login` | Public | Authenticate and issue httpOnly cookie |
+| `POST` | `/api/auth/logout` | Public | Clear session cookie |
+| `GET` | `/api/auth/profile` | User | Get current session details |
+| `POST` | `/api/files/upload` | User | Upload up to 5 files with extraction |
+| `GET` | `/api/files` | User | List, search, filter, and paginate files |
+| `GET` | `/api/files/:id` | User | Get file metadata & extracted text |
+| `GET` | `/api/files/:id/download` | User | Stream preview or download file |
+| `DELETE`| `/api/files/:id` | User | Delete database record & cloud blob |
+| `GET` | `/api/stats/me` | User | Personal vault statistics |
+| `GET` | `/api/stats/admin` | Admin | System KPIs & 30-day activity trend |
+| `GET` | `/api/users` | Admin | Paginated user management table |
+| `PATCH` | `/api/users/:id/role` | Admin | Change role (`USER` ↔ `ADMIN`) |
+| `DELETE`| `/api/users/:id` | Admin | Cascade delete user & all files |
+
+---
+
+## 🧪 Automated Testing
+
+The backend includes automated unit and integration tests powered by **Vitest** and **Supertest**:
+
+```bash
+cd server
+npm test
+```
+
+```text
+✓ tests/health.test.ts (2 tests)
+✓ tests/files.test.ts  (6 tests)
+✓ tests/auth.test.ts   (7 tests)
+✓ tests/users.test.ts  (6 tests)
+
+Test Files: 4 passed (4)
+Tests:      21 passed (21)
+```
+
+---
+
+## ☁️ Deployment Guide (Vercel & Render)
+
+### Deploying Frontend to Vercel
+1. Import the repository into [Vercel](https://vercel.com).
+2. Set **Root Directory** to `client`.
+3. Set Framework Preset to `Next.js`.
+4. Add environment variable: `NEXT_PUBLIC_API_URL=https://your-backend.vercel.app` (or your Render URL).
+5. Deploy.
+
+### Deploying Backend to Vercel (Serverless)
+1. Import the repository as a separate project in [Vercel](https://vercel.com).
+2. Set **Root Directory** to `server`.
+3. Vercel automatically detects [`server/vercel.json`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/server/vercel.json) and routes requests through [`server/api/index.ts`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/server/api/index.ts).
+4. Configure all environment variables from `server/.env.example` in the Vercel project settings.
+5. Deploy.
+
+### Deploying Backend to Render (Alternative)
+1. In [Render](https://render.com), create a new **Web Service** from [`server/render.yaml`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/server/render.yaml).
+2. Configure your `DATABASE_URL`, `JWT_SECRET`, and `CLOUDINARY_*` secrets.
+3. Render automatically executes `npm ci && npm run build` and runs migrations before launch.
+
+---
+
+## 📚 Complete Documentation Index
+
+Detailed architectural specifications, ADRs, user flows, and diagrams are stored in the [`docs/`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/) directory:
+
+- [`01-Product-Requirements-Document.md`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/01-Product-Requirements-Document.md) — Executive PRD
+- [`02-Software-Requirements-Specification.md`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/02-Software-Requirements-Specification.md) — Comprehensive SRS
+- [`09-Database-Design-and-Data-Dictionary.md`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/09-Database-Design-and-Data-Dictionary.md) — Schema & Indexes
+- [`11-API-Specification.md`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/11-API-Specification.md) — REST API Specification
+- [`12-Authentication-and-Authorization.md`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/12-Authentication-and-Authorization.md) — Security Architecture
+- [`13-File-Upload-and-Processing.md`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/13-File-Upload-and-Processing.md) — Pipeline & Magic Bytes
+- [`24-Deployment-Architecture.md`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/24-Deployment-Architecture.md) — Multi-cloud Architecture
+- [`25-Environment-Variables.md`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/25-Environment-Variables.md) — Configuration Reference
+- [`30-Assumptions-and-Decisions.md`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/30-Assumptions-and-Decisions.md) — Architecture Decision Records (ADRs)
+- [`35-Final-Submission-Checklist.md`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/docs/35-Final-Submission-Checklist.md) — Verification Audit Checklist
+
+---
+
+## 👨‍💻 Author
+
+**Mohand Hatem** — Full Stack Web Developer
