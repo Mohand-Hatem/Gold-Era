@@ -130,6 +130,7 @@ export const usersRepository = {
         email: true,
         role: true,
         isEmailVerified: true,
+        avatarUrl: true,
         tokenVersion: true,
         createdAt: true,
         updatedAt: true,

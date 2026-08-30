@@ -70,11 +70,11 @@ export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => 
   }
 
   if (!req.file) {
-    throw AppError.badRequest("ERR_NO_FILE", "No image file uploaded for avatar")
+    throw AppError.badRequest("ERR_VALIDATION", "No image file uploaded for avatar")
   }
 
   if (!req.file.mimetype.startsWith("image/")) {
-    throw AppError.badRequest("ERR_INVALID_MIME", "Avatar must be an image format (JPEG, PNG, WebP)")
+    throw AppError.unsupportedType("Avatar must be an image format (JPEG, PNG, WebP)")
   }
 
   const ext = extractExtension(req.file.originalname) || "png"

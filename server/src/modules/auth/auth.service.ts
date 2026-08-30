@@ -178,7 +178,7 @@ export async function login(input: LoginInput): Promise<{ user: PublicUser; toke
       email: user.email,
       role: user.role,
       isEmailVerified: user.isEmailVerified,
-      avatarUrl: user.avatarUrl ?? null,
+      avatarUrl: (user as Record<string, any>).avatarUrl ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     },

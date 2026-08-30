@@ -1,4 +1,4 @@
-import type { Prisma, User, VerificationCode } from "@prisma/client"
+import type { Role, User, VerificationCode } from "@prisma/client"
 
 import { prisma } from "../../config/prisma.js"
 
@@ -19,9 +19,18 @@ export const PUBLIC_USER_SELECT = {
   avatarUrl: true,
   createdAt: true,
   updatedAt: true,
-} satisfies Prisma.UserSelect
+} as const
 
-export type PublicUser = Prisma.UserGetPayload<{ select: typeof PUBLIC_USER_SELECT }>
+export interface PublicUser {
+  id: string
+  name: string
+  email: string
+  role: Role
+  isEmailVerified: boolean
+  avatarUrl?: string | null
+  createdAt: Date
+  updatedAt: Date
+}
 
 // ── Users ───────────────────────────────────────────────────────────────────
 
@@ -31,15 +40,20 @@ export async function findUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function findPublicUserById(id: string): Promise<PublicUser | null> {
-  return prisma.user.findUnique({ where: { id }, select: PUBLIC_USER_SELECT })
+  const user = await (prisma.user as any).findUnique({
+    where: { id },
+    select: PUBLIC_USER_SELECT,
+  })
+  return user as PublicUser | null
 }
 
 export async function updateUserAvatar(userId: string, avatarUrl: string): Promise<PublicUser> {
-  return prisma.user.update({
+  const updated = await (prisma.user as any).update({
     where: { id: userId },
     data: { avatarUrl },
     select: PUBLIC_USER_SELECT,
   })
+  return updated as PublicUser
 }
 
 /**
