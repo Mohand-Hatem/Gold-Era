@@ -35,16 +35,22 @@ const envSchema = z.object({
   ADMIN_NAME: z.string().min(1).default("Admin"),
   ADMIN_PASSWORD: z.string().min(8).default("Admin123"),
 
-  // ── Email / OTP delivery (consumed from Phase 4) ────────────────────────
-  // Supports Brevo HTTPS API (sends to ANY email without domain verification),
-  // Resend HTTPS API, and Gmail SMTP.
-  BREVO_API_KEY: z.string().optional(),
-  BREVO_SENDER_EMAIL: z.string().optional(),
-  BREVO_SENDER_NAME: z.string().optional().default("Filox Vault"),
-  RESEND_API_KEY: z.string().optional(),
-  RESEND_FROM: z.string().optional().default("Filox Vault <onboarding@resend.dev>"),
-  GMAIL_USER: z.string().optional(),
-  GMAIL_PASS: z.string().optional(),
+  // ── Email / OTP delivery (consumed from Phase 4, ADR-011) ───────────────
+  // Nodemailer + Gmail SMTP is the only delivery mechanism. Credentials are a
+  // Gmail *App Password* (2FA required) — never the account password.
+  //
+  // Optional in the schema so development and tests boot without mail, but
+  // required in production: see the refinement below.
+  SMTP_HOST: z.string().min(1).default("smtp.gmail.com"),
+  SMTP_PORT: z.coerce.number().int().positive().default(465),
+  SMTP_SECURE: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((value) => value === "true"),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  /** Envelope From. Defaults to `"Filox" <SMTP_USER>` when unset. */
+  SMTP_FROM: z.string().optional(),
 
   // ── Blob storage: Cloudinary (ADR-039) ──────────────────────────────────
   CLOUDINARY_CLOUD_NAME: z.string().min(1, "CLOUDINARY_CLOUD_NAME is required"),
@@ -73,10 +79,31 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
 })
 
+/**
+ * Production requires working mail credentials.
+ *
+ * Verification email is the only way an account can be activated, so a
+ * production deploy without SMTP credentials is broken — better to refuse to
+ * start than to fail at the first registration.
+ */
+const configSchema = envSchema.superRefine((config, ctx) => {
+  if (config.NODE_ENV !== "production") return
+
+  for (const key of ["SMTP_USER", "SMTP_PASSWORD"] as const) {
+    if (!config[key]) {
+      ctx.addIssue({
+        code: "custom",
+        path: [key],
+        message: `${key} is required in production (Gmail App Password authentication)`,
+      })
+    }
+  }
+})
+
 export type Env = z.infer<typeof envSchema>
 
 function loadEnv(): Env {
-  const parsed = envSchema.safeParse(process.env)
+  const parsed = configSchema.safeParse(process.env)
 
   if (!parsed.success) {
     console.error("\n[config] Invalid environment configuration:\n")

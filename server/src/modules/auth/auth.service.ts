@@ -22,6 +22,25 @@ import type { LoginInput, RegisterInput, ResendCodeInput, VerifyEmailInput } fro
  * Auth business logic (docs/12).
  */
 
+/**
+ * Delivers a code, converting any transport failure into a client-safe error.
+ *
+ * The send is awaited rather than dispatched in the background: an unsent code
+ * leaves the account unusable, so the caller must learn about it. The code
+ * itself never reaches the response or the logs.
+ */
+async function deliverCode(email: string, code: string): Promise<void> {
+  try {
+    await sendOtpEmail(email, code)
+  } catch {
+    // sendOtpEmail has already logged the reason without the code.
+    throw AppError.serviceUnavailable(
+      "ERR_EMAIL_SEND_FAILED",
+      "Unable to send verification email. Please try again.",
+    )
+  }
+}
+
 /** Issues a fresh code for a user and emails it. Assumes eligibility is checked. */
 async function issueVerificationCode(userId: string, email: string): Promise<void> {
   const code = generateOtpCode()
@@ -30,8 +49,7 @@ async function issueVerificationCode(userId: string, email: string): Promise<voi
   await repo.consumeAllActiveCodes(userId)
   await repo.createCode({ userId, codeHash, expiresAt: otpExpiryDate() })
 
-  // Dispatch email asynchronously so the client request returns immediately (<150ms)
-  void sendOtpEmail(email, code)
+  await deliverCode(email, code)
 }
 
 /** AUTH-001 / AUTH-002 — create an unverified account and send its first code. */
@@ -55,8 +73,9 @@ export async function register(
     expiresAt: otpExpiryDate(),
   })
 
-  // Dispatch email asynchronously so registration finishes instantaneously
-  void sendOtpEmail(user.email, code)
+  // The account exists at this point. If delivery fails the caller gets a 503
+  // and can request a replacement code once the resend cooldown elapses.
+  await deliverCode(user.email, code)
 
   return { userId: user.id, email: user.email }
 }

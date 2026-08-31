@@ -168,8 +168,12 @@ Visit **`http://localhost:3000`** to access the application.
 | `FRONTEND_URL` | Yes | Origin URL of the frontend (for CORS & cookies) | `http://localhost:3000` (Local) / `https://gold-era-front.vercel.app` (Prod) |
 | `ADMIN_EMAIL` | No | Pre-seeded admin email | `admin@example.com` |
 | `ADMIN_PASSWORD` | No | Pre-seeded admin password | `Admin123` |
-| `GMAIL_USER` | No | Gmail address for OTP delivery | `your-email@gmail.com` *(Logs to console if empty)* |
-| `GMAIL_PASS` | No | Gmail 16-character App Password | `xxxx xxxx xxxx xxxx` |
+| `SMTP_HOST` | No | Gmail SMTP host | `smtp.gmail.com` (default) |
+| `SMTP_PORT` | No | SMTP port (implicit TLS) | `465` (default) |
+| `SMTP_SECURE` | No | Implicit TLS on connect | `true` (default) |
+| `SMTP_USER` | **In prod** | Gmail address used to send OTP email | `your-email@gmail.com` |
+| `SMTP_PASSWORD` | **In prod** | Gmail 16-character **App Password** (never the account password) | `xxxxxxxxxxxxxxxx` |
+| `SMTP_FROM` | No | Envelope From | `"Filox" <your-email@gmail.com>` (default) |
 
 ---
 

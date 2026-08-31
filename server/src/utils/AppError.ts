@@ -36,6 +36,7 @@ export type ErrorCode =
   | "ERR_UPLOAD_FAILED"
   // Infrastructure
   | "ERR_RATE_LIMITED"
+  | "ERR_EMAIL_SEND_FAILED"
   | "ERR_INTERNAL"
 
 export interface ErrorDetail {
@@ -107,5 +108,10 @@ export class AppError extends Error {
 
   static internal(message = "Something went wrong"): AppError {
     return new AppError("ERR_INTERNAL", 500, message)
+  }
+
+  /** A dependency the request needed (mail, storage) was unreachable. */
+  static serviceUnavailable(code: ErrorCode, message: string): AppError {
+    return new AppError(code, 503, message)
   }
 }
