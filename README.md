@@ -31,7 +31,7 @@ Filox is an enterprise-grade SaaS file vault designed to store, manage, inspect,
 - **Intelligent Processing:** Server-side asynchronous text extraction from PDF (`pdf-parse`), Word (`mammoth`), and plaintext files.
 - **Deep Search:** Full-text search across filenames and inside the extracted file contents with a 300ms debounce.
 - **Dual View Modes:** Instant toggle between a tabular data grid and a card grid.
-- **Secure Authentication:** Email OTP verification, Bcrypt password hashing (cost 12), and signed JWT session cookies with CORS protection.
+- **Secure Authentication:** Email OTP verification (bcrypt-hashed codes, 10-minute expiry, attempt and resend caps), Bcrypt password hashing (cost 12), and signed JWT session cookies with CORS protection.
 - **Granular RBAC:** Role-Based Access Control protecting sensitive admin endpoints and personal file vaults.
 
 ---
@@ -51,7 +51,7 @@ Filox is an enterprise-grade SaaS file vault designed to store, manage, inspect,
 - **Database & ORM:** PostgreSQL & Prisma ORM 6.19
 - **Authentication & Security:** Bcrypt, JSONWebToken, Express Rate Limit, Cookie-Parser
 - **File Processing & Storage:** Multer, File-Type (Magic Bytes), pdf-parse, mammoth, Cloudinary SDK
-- **Email Delivery:** Nodemailer (Gmail SMTP + local console fallback)
+- **Email Delivery:** Nodemailer over Gmail SMTP (single delivery path, no fallback)
 - **Testing:** Vitest 4.1 & Supertest
 
 ---
@@ -119,7 +119,9 @@ npm install
 # Copy environment variables template
 cp .env.example .env
 
-# Configure your DATABASE_URL, JWT_SECRET, and Cloudinary keys in server/.env
+# Configure DATABASE_URL, JWT_SECRET, Cloudinary keys, and the SMTP_* block in
+# server/.env. Registration cannot complete without working SMTP credentials —
+# there is no console fallback (see §5.1).
 
 # Run database migration and seed admin
 npx prisma db push
@@ -166,6 +168,9 @@ Visit **`http://localhost:3000`** to access the application.
 | `CLOUDINARY_API_SECRET`| Yes | Cloudinary API Secret | `your_api_secret` |
 | `CLOUDINARY_FOLDER` | No | Prefix folder in Cloudinary | `filox` |
 | `FRONTEND_URL` | Yes | Origin URL of the frontend (for CORS & cookies) | `http://localhost:3000` (Local) / `https://gold-era-front.vercel.app` (Prod) |
+| `COOKIE_SECURE` | No | Send the session cookie over HTTPS only | `false` (Local) / `true` (Prod) |
+| `COOKIE_SAMESITE` | No | Session cookie `SameSite` policy | `lax` (Local) / `none` (Prod, cross-site) |
+| `OTP_TTL_MINUTES` | No | Verification code lifetime | `10` (default) |
 | `ADMIN_EMAIL` | No | Pre-seeded admin email | `admin@example.com` |
 | `ADMIN_PASSWORD` | No | Pre-seeded admin password | `Admin123` |
 | `SMTP_HOST` | No | Gmail SMTP host | `smtp.gmail.com` (default) |
@@ -174,6 +179,31 @@ Visit **`http://localhost:3000`** to access the application.
 | `SMTP_USER` | **In prod** | Gmail address used to send OTP email | `your-email@gmail.com` |
 | `SMTP_PASSWORD` | **In prod** | Gmail 16-character **App Password** (never the account password) | `xxxxxxxxxxxxxxxx` |
 | `SMTP_FROM` | No | Envelope From | `"Filox" <your-email@gmail.com>` (default) |
+
+`SMTP_USER` and `SMTP_PASSWORD` are optional in development and **required when `NODE_ENV=production`** — the server refuses to boot without them rather than starting in a state where no account can ever be activated.
+
+### 5.1 Email / OTP Delivery
+
+Verification codes travel one path and one path only:
+
+```text
+Registration → OTP generated (crypto.randomInt) → hashed with bcrypt and stored
+            → Nodemailer → Gmail SMTP (smtp.gmail.com:465, implicit TLS) → user's inbox
+```
+
+**There is no fallback.** If SMTP delivery fails, the API returns `503 ERR_EMAIL_SEND_FAILED` with the message *"Unable to send verification email. Please try again."* The code is never printed to the console, never returned in a response, and never included in an error message. The account row still exists, so the user can request a replacement code once the 60-second resend cooldown elapses.
+
+**Gmail setup:** enable 2-Step Verification on the sending account, then create an [App Password](https://myaccount.google.com/apppasswords) and use those 16 characters as `SMTP_PASSWORD`. The normal account password will not authenticate.
+
+Production logs contain only:
+
+```text
+[mail] Sending verification email to user@example.com
+[mail] Verification email sent successfully to user@example.com
+[mail] Failed to send verification email to user@example.com: Connection timeout
+```
+
+**OTP policy:** 6 digits from `crypto.randomInt`, bcrypt-hashed at rest, 10-minute expiry, consumed on successful verification, 5 verification attempts per code, 60-second resend cooldown, and 5 resends per rolling hour. Requesting a new code invalidates all previous ones.
 
 ---
 
@@ -213,8 +243,11 @@ Opens interactive GUI at `http://localhost:5555` to view and manage tables.
 ### A. Backend Deployment (Railway)
 1. In your [Railway Dashboard](https://railway.com/), create a new project and add a **PostgreSQL** database.
 2. Link your GitHub repository (`Gold-Era`) and set the **Root Directory** to `server`.
-3. Add the required Environment Variables (`NODE_ENV=production`, `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `JWT_SECRET`, `CLOUDINARY_*`, `FRONTEND_URL`).
-4. Railway automatically detects [`server/railway.json`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/server/railway.json), runs `npx prisma db push --skip-generate`, verifies `/health`, and starts the server.
+3. Add the required Environment Variables (`NODE_ENV=production`, `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `JWT_SECRET`, `CLOUDINARY_*`, `SMTP_*`, `FRONTEND_URL`). Leave `PORT` unset — Railway injects it.
+4. Set `COOKIE_SECURE=true` and `COOKIE_SAMESITE=none`. The frontend (`vercel.app`) and API (`railway.app`) are different sites, so the session cookie is cross-site; browsers drop `SameSite=Lax` cookies there and only accept `SameSite=None` alongside `Secure`.
+5. Railway automatically detects [`server/railway.json`](server/railway.json), runs `npx prisma db push --skip-generate`, verifies `/health`, and starts the server.
+
+> **⚠️ Outbound SMTP on Railway.** Railway blocks outbound SMTP (ports 25/465/587) on trial and free plans, which surfaces as `ETIMEDOUT` / `command: 'CONN'` — a dropped TCP handshake, before TLS or authentication. No Nodemailer setting works around it. Verify from a Railway shell with `nc -vz -w 10 smtp.gmail.com 465`: a hang means egress is blocked and the plan needs upgrading (or the API needs a host that permits SMTP), while `succeeded` points at the credentials instead. The same configuration connects and authenticates in under a second from an unrestricted network.
 
 ### B. Frontend Deployment (Vercel)
 1. Import the repository into [Vercel](https://vercel.com).
@@ -243,6 +276,10 @@ Opens interactive GUI at `http://localhost:5555` to view and manage tables.
    * Files are stored as authenticated blobs in **Cloudinary** rather than local disk storage to guarantee persistence across serverless and container restarts.
 5. **Debounced Search:**
    * The client debounces search input by **300ms** to prevent unnecessary database queries while the user is typing.
+6. **Email Delivery Has No Fallback:**
+   * Nodemailer over Gmail SMTP is the only delivery mechanism; no secondary provider is configured.
+   * A verification code is a live credential, so it is never written to logs or returned by the API. A delivery failure is reported as `503 ERR_EMAIL_SEND_FAILED` rather than being masked by a success response.
+   * Registration awaits delivery instead of dispatching it in the background, trading roughly a second of latency for the ability to tell the user their code was actually sent.
 
 ---
 
@@ -256,14 +293,19 @@ npm test
 ```
 
 ```text
- ✓ tests/health.test.ts (2 tests)
- ✓ tests/files.test.ts  (6 tests)
- ✓ tests/auth.test.ts   (7 tests)
- ✓ tests/users.test.ts  (6 tests)
+ ✓ tests/health.test.ts             (2 tests)
+ ✓ tests/files.test.ts              (6 tests)
+ ✓ tests/auth.test.ts               (7 tests)
+ ✓ tests/users.test.ts              (6 tests)
+ ✓ tests/mail.test.ts               (9 tests)
+ ✓ tests/mail-unconfigured.test.ts  (2 tests)
+ ✓ tests/auth-verification.test.ts  (4 tests)
 
- Test Files  4 passed (4)
-      Tests  21 passed (21)
+ Test Files  7 passed (7)
+      Tests  36 passed (36)
 ```
+
+Nodemailer and the auth repository are mocked at the module boundary, so the suite opens no sockets, touches no database, and sends no real email. The mail tests assert the transport configuration (port 465, implicit TLS, IPv4, certificate validation left on), that the code reaches the SMTP payload, and — on both success and SMTP failure — that the code appears in **no** log line, no error message, and no fallback channel.
 
 ---
 
