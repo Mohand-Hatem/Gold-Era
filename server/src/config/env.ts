@@ -36,7 +36,9 @@ const envSchema = z.object({
   ADMIN_PASSWORD: z.string().min(8).default("Admin123"),
 
   // ── Email / OTP delivery (consumed from Phase 4) ────────────────────────
-  // Optional: when absent, MailService logs OTPs to the console (ADR-011).
+  // Supports Resend HTTPS API (recommended for Railway/Cloud) and Gmail SMTP.
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().optional().default("Filox Vault <onboarding@resend.dev>"),
   GMAIL_USER: z.string().optional(),
   GMAIL_PASS: z.string().optional(),
 
