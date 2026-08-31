@@ -30,7 +30,8 @@ async function issueVerificationCode(userId: string, email: string): Promise<voi
   await repo.consumeAllActiveCodes(userId)
   await repo.createCode({ userId, codeHash, expiresAt: otpExpiryDate() })
 
-  await sendOtpEmail(email, code)
+  // Dispatch email asynchronously so the client request returns immediately (<150ms)
+  void sendOtpEmail(email, code)
 }
 
 /** AUTH-001 / AUTH-002 — create an unverified account and send its first code. */
@@ -54,7 +55,8 @@ export async function register(
     expiresAt: otpExpiryDate(),
   })
 
-  await sendOtpEmail(user.email, code)
+  // Dispatch email asynchronously so registration finishes instantaneously
+  void sendOtpEmail(user.email, code)
 
   return { userId: user.id, email: user.email }
 }

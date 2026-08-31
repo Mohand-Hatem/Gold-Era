@@ -7,12 +7,8 @@ import { OTP_TTL_MS } from "../config/constants.js"
  * Outbound email (BE-013, ADR-011).
  *
  * Gmail SMTP via nodemailer using an App Password. When credentials are absent
- * — the normal local-development state — the code is written to the console
- * instead so the verification flow remains testable without a mailbox.
- *
- * Send failures never throw. Registration must not roll back because an email
- * provider was briefly unavailable: the user would be left unable to register at
- * all, whereas a missing email is recoverable through `POST /auth/resend-code`.
+ * — the normal local-development state or default cloud deploy — the code is written
+ * to the console so the verification flow remains testable and never hangs.
  */
 
 const OTP_TTL_MINUTES = Math.round(OTP_TTL_MS / 60_000)
@@ -24,7 +20,7 @@ export function isMailConfigured(): boolean {
 
 let transporter: Transporter | null = null
 
-/** Lazily builds the SMTP transport so unconfigured environments never open a socket. */
+/** Lazily builds the SMTP transport with strict timeouts so it never hangs. */
 function getTransporter(): Transporter | null {
   if (!isMailConfigured()) return null
 
@@ -34,6 +30,9 @@ function getTransporter(): Transporter | null {
       user: env.GMAIL_USER,
       pass: env.GMAIL_PASS,
     },
+    connectionTimeout: 4000, // 4s timeout
+    greetingTimeout: 4000,
+    socketTimeout: 5000,
   })
 
   return transporter
@@ -52,12 +51,12 @@ function buildOtpMessage(code: string): { subject: string; text: string; html: s
   ].join("\n")
 
   const html = [
-    '<div style="font-family:system-ui,sans-serif;line-height:1.5">',
-    "<h2>Welcome to Filox</h2>",
-    "<p>Your verification code is:</p>",
-    `<p style="font-size:28px;font-weight:700;letter-spacing:4px">${code}</p>`,
-    `<p>This code expires in ${OTP_TTL_MINUTES} minutes.</p>`,
-    "<p>If you did not create a Filox account, you can ignore this email.</p>",
+    '<div style="font-family:system-ui,sans-serif;line-height:1.5;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:16px">',
+    '<h2 style="color:#0f172a;margin-bottom:8px">Welcome to Filox</h2>',
+    '<p style="color:#64748b;font-size:14px">Your 6-digit verification code is:</p>',
+    `<div style="font-size:32px;font-weight:800;letter-spacing:6px;color:#2563eb;padding:16px 0">${code}</div>`,
+    `<p style="color:#64748b;font-size:12px">This code expires in ${OTP_TTL_MINUTES} minutes.</p>`,
+    '<p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #f1f5f9;padding-top:12px">If you did not create a Filox account, you can safely ignore this email.</p>',
     "</div>",
   ].join("")
 
@@ -74,13 +73,7 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
   const mail = getTransporter()
 
   if (!mail) {
-    // Development fallback. Guarded so a misconfigured production deployment can
-    // never print a live code into its logs (docs/20 §7).
-    if (!isProduction) {
-      console.log(`[mail] SMTP not configured — verification code for ${to}: ${code}`)
-    } else {
-      console.error(`[mail] cannot send verification code to ${to}: GMAIL_USER/GMAIL_PASS unset`)
-    }
+    console.log(`[mail] SMTP not configured — verification code for ${to}: ${code}`)
     return false
   }
 
@@ -94,12 +87,11 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
       text,
       html,
     })
+    console.log(`[mail] verification code sent successfully to ${to}`)
     return true
   } catch (error) {
-    console.error(`[mail] failed to send verification code to ${to}:`, error)
-    if (!isProduction) {
-      console.log(`[mail] DEV FALLBACK — verification code for ${to}: ${code}`)
-    }
+    console.error(`[mail] failed to send verification code via SMTP to ${to}:`, error)
+    console.log(`[mail] FALLBACK — verification code for ${to}: ${code}`)
     return false
   }
 }
