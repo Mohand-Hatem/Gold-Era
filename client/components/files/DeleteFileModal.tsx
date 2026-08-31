@@ -60,6 +60,7 @@ export function DeleteFileModal({
             size="sm"
             onClick={onClose}
             disabled={isDeleting}
+            className="cursor-pointer"
           >
             Cancel
           </Button>
@@ -69,20 +70,21 @@ export function DeleteFileModal({
             onClick={handleDelete}
             isLoading={isDeleting}
             leftIcon={<Trash2 className="h-4 w-4" />}
+            className="cursor-pointer"
           >
             Delete File
           </Button>
         </div>
       }
     >
-      <div className="flex items-start gap-3 rounded-lg border border-red-100 bg-red-50/60 p-4 text-red-900">
-        <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/60 dark:bg-red-950/40 p-4 text-red-900 dark:text-red-200">
+        <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
         <div className="text-xs space-y-1">
-          <p className="font-semibold text-red-900 truncate">
+          <p className="font-bold text-red-900 dark:text-red-100 truncate">
             {file.originalName}
           </p>
-          <p className="text-red-700">
-            Deleting this file will remove both the database record and the authenticated cloud storage blob permanently.
+          <p className="text-red-700 dark:text-red-300">
+            Deleting this file will permanently remove the database record, extracted text index, and authenticated cloud blob.
           </p>
         </div>
       </div>

@@ -33,10 +33,10 @@ export function AppSidebar() {
   ]
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 lg:flex transition-colors duration-200">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 lg:flex transition-colors duration-200">
       {/* App Branding */}
       <div className="flex h-16 items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 px-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs shadow-blue-500/20">
           <Folder className="h-5 w-5 fill-white/20" />
         </div>
         <div className="flex flex-col">
@@ -63,15 +63,15 @@ export function AppSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all cursor-pointer",
                   isActive
-                    ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 font-semibold"
+                    ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 font-semibold shadow-2xs"
                     : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white",
                 )}
               >
                 <Icon
                   className={cn(
-                    "h-4 w-4",
+                    "h-4.5 w-4.5",
                     isActive ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500",
                   )}
                 />
@@ -100,15 +100,15 @@ export function AppSidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all cursor-pointer",
                     isActive
-                      ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 font-semibold"
+                      ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 font-semibold shadow-2xs"
                       : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white",
                   )}
                 >
                   <Icon
                     className={cn(
-                      "h-4 w-4",
+                      "h-4.5 w-4.5",
                       isActive ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500",
                     )}
                   />
@@ -123,8 +123,8 @@ export function AppSidebar() {
       {/* User Profile & Logout */}
       <div className="border-t border-slate-100 dark:border-slate-800 p-4">
         <div className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-800/80 p-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-blue-600 font-semibold text-white text-sm shadow-xs">
+          <Link href="/profile" className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer group">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-blue-600 font-semibold text-white text-sm shadow-xs group-hover:ring-2 group-hover:ring-blue-500/40 transition-all">
               {user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
               ) : (
@@ -132,19 +132,19 @@ export function AppSidebar() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-900 dark:text-white">
+              <p className="truncate text-sm font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {user?.name || "User"}
               </p>
               <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                 {user?.email}
               </p>
             </div>
-          </div>
+          </Link>
           <button
             type="button"
             onClick={logout}
             title="Log Out"
-            className="rounded-xl p-2 text-slate-400 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 dark:hover:text-red-400 transition-colors active:scale-90"
+            className="rounded-xl p-2 text-slate-400 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 dark:hover:text-red-400 transition-colors active:scale-90 cursor-pointer"
             aria-label="Log Out"
           >
             <LogOut className="h-4.5 w-4.5" />

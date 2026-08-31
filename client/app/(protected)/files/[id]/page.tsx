@@ -20,6 +20,7 @@ import {
   Hash,
   Loader2,
   Image as ImageIcon,
+  ShieldCheck,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -120,7 +121,7 @@ export default function FileDetailsPage() {
 
   if (isError || !file) {
     return (
-      <div className="max-w-md mx-auto my-12 text-center p-8 rounded-2xl border border-red-200 dark:border-red-900/60 bg-white dark:bg-slate-900">
+      <div className="max-w-md mx-auto my-12 text-center p-8 rounded-2xl border border-red-200 dark:border-red-900/60 bg-white dark:bg-slate-900 shadow-sm">
         <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
           File Not Found
@@ -134,6 +135,7 @@ export default function FileDetailsPage() {
             variant="brand"
             size="sm"
             leftIcon={<ArrowLeft className="h-4 w-4" />}
+            className="cursor-pointer"
           >
             Back to My Files
           </Button>
@@ -145,11 +147,11 @@ export default function FileDetailsPage() {
   return (
     <div className="space-y-8 text-slate-900 dark:text-slate-100">
       {/* Top Breadcrumb & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200/80 dark:border-slate-800">
         <div>
           <Link
             href="/files"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 mb-2 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 mb-2 transition-colors cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to My Files
@@ -172,7 +174,7 @@ export default function FileDetailsPage() {
             onClick={() => handleDownload("inline")}
             isLoading={isLoadingPreview}
             leftIcon={<ExternalLink className="h-4 w-4" />}
-            className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+            className="cursor-pointer"
           >
             Preview
           </Button>
@@ -181,7 +183,7 @@ export default function FileDetailsPage() {
             size="sm"
             onClick={() => handleDownload("attachment")}
             leftIcon={<Download className="h-4 w-4" />}
-            className="bg-blue-600 text-white"
+            className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
           >
             Download
           </Button>
@@ -190,6 +192,7 @@ export default function FileDetailsPage() {
             size="sm"
             onClick={() => setIsDeleteModalOpen(true)}
             leftIcon={<Trash2 className="h-4 w-4" />}
+            className="cursor-pointer"
           >
             Delete
           </Button>
@@ -199,7 +202,7 @@ export default function FileDetailsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: File Metadata Panel */}
         <div className="lg:col-span-5 space-y-6">
-          <Card className="border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-xs">
             <CardHeader>
               <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -255,18 +258,18 @@ export default function FileDetailsPage() {
                 </span>
                 <div className="mt-1">
                   {file.extractionStatus === "DONE" && (
-                    <Badge variant="success">
+                    <Badge variant="brand">
                       DONE (Successfully Extracted)
                     </Badge>
                   )}
                   {file.extractionStatus === "PENDING" && (
-                    <Badge variant="warning">PENDING</Badge>
+                    <Badge variant="default">PENDING</Badge>
                   )}
                   {file.extractionStatus === "SKIPPED" && (
-                    <Badge variant="outline">SKIPPED (Image / Non-text)</Badge>
+                    <Badge variant="default">SKIPPED (Image / Non-text)</Badge>
                   )}
                   {file.extractionStatus === "FAILED" && (
-                    <Badge variant="danger">FAILED</Badge>
+                    <Badge variant="default">FAILED</Badge>
                   )}
                 </div>
               </div>
@@ -298,7 +301,7 @@ export default function FileDetailsPage() {
 
         {/* Right Column: Preview & Extracted Content Viewer */}
         <div className="lg:col-span-7 space-y-6">
-          <Card className="flex flex-col h-full min-h-112.5 border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <Card className="flex flex-col h-full min-h-112.5 border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <div>
                 <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -326,7 +329,7 @@ export default function FileDetailsPage() {
                       <Copy className="h-3.5 w-3.5" />
                     )
                   }
-                  className="dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                  className="cursor-pointer"
                 >
                   {copied ? "Copied!" : "Copy Text"}
                 </Button>
@@ -335,7 +338,7 @@ export default function FileDetailsPage() {
 
             <CardContent className="flex-1 flex flex-col justify-center">
               {file.extractedContent ? (
-                <div className="relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-900 dark:bg-slate-950 p-5 font-mono text-xs text-slate-100 dark:text-slate-100 whitespace-pre-wrap wrap-break-word leading-relaxed max-h-125 overflow-y-auto shadow-inner">
+                <div className="relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-900 dark:bg-slate-950 p-5 font-mono text-xs text-slate-100 whitespace-pre-wrap break-words leading-relaxed max-h-125 overflow-y-auto shadow-inner">
                   {file.extractedContent}
                 </div>
               ) : isImage ? (
@@ -357,8 +360,7 @@ export default function FileDetailsPage() {
                         Image Asset Ready
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-                        Click Preview to render this photo or download in full
-                        quality.
+                        Click Preview to render this photo or download in full quality.
                       </p>
                       <Button
                         variant="brand"
@@ -366,7 +368,7 @@ export default function FileDetailsPage() {
                         onClick={() => handleDownload("inline")}
                         isLoading={isLoadingPreview}
                         leftIcon={<ExternalLink className="h-4 w-4" />}
-                        className="bg-blue-600 text-white"
+                        className="bg-blue-600 text-white cursor-pointer"
                       >
                         Load Image Preview
                       </Button>

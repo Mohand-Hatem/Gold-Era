@@ -73,9 +73,26 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
+
+  /* Universal pointer cursor for interactive controls */
+  button,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"],
+  select {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
 }
 
-/* Explicit Dark Mode Overrides to guarantee dark theme across all forms, buttons & cards */
+/* Explicit Dark Mode Overrides */
 .dark body {
   background-color: #090d16;
   color: #f8fafc;
@@ -85,6 +102,33 @@
 .dark textarea,
 .dark select {
   color-scheme: dark;
+}
+
+/* Custom Scrollbar for dashboard & text views */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* Custom UI Utility Styles */

@@ -57,11 +57,11 @@ export default function ProfilePage() {
   return (
     <div className="space-y-8 max-w-4xl text-slate-900 dark:text-slate-100">
       {/* Header Banner with Interactive Avatar Upload */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-200/80 dark:border-slate-800">
         <div className="flex items-center gap-5">
           {/* Avatar Container with Upload Trigger */}
-          <div className="relative group">
-            <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl bg-blue-600 font-bold text-white text-3xl shadow-lg shadow-blue-500/20 border-2 border-white dark:border-slate-800">
+          <div className="relative group cursor-pointer" onClick={() => !isUploading && fileInputRef.current?.click()}>
+            <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl bg-blue-600 font-bold text-white text-3xl shadow-lg shadow-blue-500/20 border-2 border-white dark:border-slate-800 group-hover:ring-4 group-hover:ring-blue-500/30 transition-all">
               {user.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
@@ -83,10 +83,9 @@ export default function ProfilePage() {
             {/* Camera Overlay Button */}
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
               title="Change Profile Picture"
-              className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md transition-transform hover:scale-110 active:scale-95 disabled:opacity-50"
+              className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md transition-transform hover:scale-110 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <Camera className="h-4 w-4" />
             </button>
@@ -114,7 +113,7 @@ export default function ProfilePage() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline mt-1.5 flex items-center gap-1"
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline mt-1.5 flex items-center gap-1 cursor-pointer"
             >
               <Upload className="h-3 w-3" />
               {user.avatarUrl ? "Change Photo" : "Upload Profile Photo"}
@@ -125,7 +124,7 @@ export default function ProfilePage() {
         <button
           type="button"
           onClick={logout}
-          className="flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/70 dark:bg-red-950/40 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white shadow-2xs transition-all duration-200 active:scale-95"
+          className="flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/70 dark:bg-red-950/40 px-4 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white shadow-2xs transition-all duration-200 active:scale-95 cursor-pointer"
         >
           <LogOut className="h-4 w-4" />
           <span>Sign Out</span>
@@ -134,7 +133,7 @@ export default function ProfilePage() {
 
       {/* Account Details Card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-xs">
           <CardHeader>
             <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -173,7 +172,7 @@ export default function ProfilePage() {
         </Card>
 
         {/* Security & Access Card */}
-        <Card className="border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-xs">
           <CardHeader>
             <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -193,7 +192,7 @@ export default function ProfilePage() {
                     Verified Account
                   </span>
                 ) : (
-                  <Badge variant="warning">Unverified</Badge>
+                  <Badge variant="default">Unverified</Badge>
                 )}
               </div>
             </div>

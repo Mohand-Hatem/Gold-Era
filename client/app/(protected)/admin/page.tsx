@@ -12,7 +12,6 @@ import {
   Shield,
   ArrowRight,
   Loader2,
-  Calendar,
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -67,23 +66,28 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-8 text-slate-900 dark:text-slate-100">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               System Overview & Analytics
             </h1>
-            <span className="rounded-full bg-blue-100 dark:bg-blue-950 px-2.5 py-0.5 text-xs font-bold text-blue-800 dark:text-blue-300">
-              Admin
+            <span className="rounded-full bg-blue-100 dark:bg-blue-950/80 px-2.5 py-0.5 text-xs font-bold text-blue-800 dark:text-blue-300">
+              Admin Console
             </span>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Platform-wide resource consumption, 30-day activity trends, and registered users.
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Platform-wide resource consumption, 30-day activity trends, and registered users directory.
           </p>
         </div>
 
         <Link href="/admin/users">
-          <Button variant="brand" size="md" rightIcon={<ArrowRight className="h-4 w-4" />} className="bg-blue-600 text-white rounded-xl">
+          <Button
+            variant="brand"
+            size="md"
+            rightIcon={<ArrowRight className="h-4 w-4" />}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer"
+          >
             Manage Users
           </Button>
         </Link>
@@ -92,20 +96,20 @@ export default function AdminDashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {/* Total Users */}
-        <Card className="border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Total Users
             </CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-              <Users className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 shadow-2xs">
+              <Users className="h-4.5 w-4.5" />
             </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-8 w-16 rounded-lg" />
             ) : (
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              <div className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono">
                 {stats?.totalUsers ?? 0}
               </div>
             )}
@@ -116,20 +120,20 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Total Files */}
-        <Card className="border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Total System Files
             </CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400">
-              <Files className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 shadow-2xs">
+              <Files className="h-4.5 w-4.5" />
             </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-8 w-16 rounded-lg" />
             ) : (
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              <div className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono">
                 {stats?.totalFiles ?? 0}
               </div>
             )}
@@ -140,20 +144,20 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Total Storage Used */}
-        <Card className="border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Total Storage Volume
             </CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
-              <HardDrive className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 shadow-2xs">
+              <HardDrive className="h-4.5 w-4.5" />
             </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-8 w-24 rounded-lg" />
             ) : (
-              <div className="text-2xl font-bold text-slate-900 dark:text-white font-mono">
+              <div className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono">
                 {formatBytes(stats?.totalStorageBytes ?? 0)}
               </div>
             )}
@@ -167,10 +171,10 @@ export default function AdminDashboardPage() {
       {/* Analytics Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* 30-Day Activity Trend AreaChart */}
-        <Card className="lg:col-span-8 flex flex-col border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <Card className="lg:col-span-8 flex flex-col border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-xs">
           <CardHeader>
             <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <TrendingUp className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
               30-Day Upload Activity Trend
             </CardTitle>
             <CardDescription className="text-slate-500 dark:text-slate-400">
@@ -203,11 +207,12 @@ export default function AdminDashboardPage() {
                       formatter={(val: any) => [`${val ?? 0} uploads`, "Upload Count"]}
                       labelFormatter={(label: any) => `Date: ${label}`}
                       contentStyle={{
-                        borderRadius: "12px",
+                        borderRadius: "14px",
                         backgroundColor: "#0f172a",
                         borderColor: "#334155",
                         color: "#f8fafc",
                         fontSize: "12px",
+                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)",
                       }}
                     />
                     <Area
@@ -226,10 +231,10 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Global Category Distribution PieChart */}
-        <Card className="lg:col-span-4 flex flex-col border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <Card className="lg:col-span-4 flex flex-col border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-xs">
           <CardHeader>
             <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <PieChartIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <PieChartIcon className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
               Category Breakdown
             </CardTitle>
             <CardDescription className="text-slate-500 dark:text-slate-400">
@@ -269,11 +274,12 @@ export default function AdminDashboardPage() {
                         item?.payload?.name,
                       ]}
                       contentStyle={{
-                        borderRadius: "12px",
+                        borderRadius: "14px",
                         backgroundColor: "#0f172a",
                         borderColor: "#334155",
                         color: "#f8fafc",
                         fontSize: "12px",
+                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)",
                       }}
                     />
                     <Legend
