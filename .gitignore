@@ -48,3 +48,6 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Documentation (Internal specs)
+docs/
