@@ -17,6 +17,14 @@ vi.mock("nodemailer", () => ({
   createTransport,
 }))
 
+/** DNS is mocked too: the suite must resolve nothing over the network. */
+const resolve4 = vi.fn(async () => ["142.250.150.109"])
+
+vi.mock("node:dns", () => ({
+  promises: { resolve4 },
+  default: { promises: { resolve4 } },
+}))
+
 const { isMailConfigured, resetTransporter, sendOtpEmail } = await import(
   "../src/services/mail.service.js"
 )
@@ -59,21 +67,42 @@ describe("Mail Service — Nodemailer + Gmail SMTP", () => {
       expect(createTransport).toHaveBeenCalledTimes(1)
       const config = createTransport.mock.calls[0]![0] as Record<string, unknown>
 
-      expect(config.host).toBe("smtp.gmail.com")
       expect(config.port).toBe(465)
       expect(config.secure).toBe(true)
-      // Railway resolves an unroutable IPv6 address for smtp.gmail.com.
-      expect(config.family).toBe(4)
-      // Certificate validation must stay on.
-      expect(config.tls).toBeUndefined()
     })
 
-    it("reuses the transport across sends", async () => {
+    it("dials a resolved IPv4 literal, never the hostname", async () => {
+      await sendOtpEmail(RECIPIENT, CODE)
+
+      expect(resolve4).toHaveBeenCalledWith("smtp.gmail.com")
+
+      const config = createTransport.mock.calls[0]![0] as Record<string, any>
+      // Nodemailer picks a random address from resolve4+resolve6 when handed a
+      // hostname; on Railway an IPv6 pick is an instant ENETUNREACH.
+      expect(config.host).toBe("142.250.150.109")
+      // SNI + certificate validation still target the real hostname, and
+      // rejectUnauthorized is left at its secure default.
+      expect(config.tls).toEqual({ servername: "smtp.gmail.com" })
+      expect(config.tls.rejectUnauthorized).toBeUndefined()
+    })
+
+    it("reuses the transport across successful sends", async () => {
       await sendOtpEmail(RECIPIENT, CODE)
       await sendOtpEmail(RECIPIENT, CODE)
 
       expect(createTransport).toHaveBeenCalledTimes(1)
+      expect(resolve4).toHaveBeenCalledTimes(1)
       expect(sendMail).toHaveBeenCalledTimes(2)
+    })
+
+    it("re-resolves after a failure so a rotated Gmail address is picked up", async () => {
+      sendMail.mockRejectedValueOnce(new Error("Connection timeout"))
+
+      await expect(sendOtpEmail(RECIPIENT, CODE)).rejects.toThrow()
+      await sendOtpEmail(RECIPIENT, CODE)
+
+      expect(resolve4).toHaveBeenCalledTimes(2)
+      expect(createTransport).toHaveBeenCalledTimes(2)
     })
   })
 

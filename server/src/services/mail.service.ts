@@ -1,3 +1,6 @@
+import { promises as dns } from "node:dns"
+import net from "node:net"
+
 import nodemailer, { type Transporter } from "nodemailer"
 import type SMTPTransport from "nodemailer/lib/smtp-transport/index.js"
 
@@ -26,39 +29,62 @@ export function isMailConfigured(): boolean {
 let transporter: Transporter | null = null
 
 /**
- * Lazily builds the Gmail SMTP transport.
+ * Resolves an SMTP host to an IPv4 address.
  *
- * `family: 4` is not cosmetic: Railway containers advertise IPv6 addresses for
- * smtp.gmail.com that the network cannot route, which surfaces as ENETUNREACH
- * before the handshake even starts.
+ * Nodemailer's `family` option cannot do this. Internally it resolves the
+ * hostname itself (`resolve4` *and* `resolve6`), concatenates both lists and
+ * picks one **at random** (lib/shared/index.js), then connects to that literal
+ * — so `family` never reaches a name lookup. Railway containers cannot route
+ * IPv6, so every random AAAA pick fails instantly with ENETUNREACH.
+ *
+ * Passing an IPv4 literal short-circuits that resolver and makes the choice
+ * deterministic. The hostname is kept as the TLS `servername` so SNI and
+ * certificate validation still check against smtp.gmail.com.
+ */
+async function resolveIpv4Host(hostname: string): Promise<string> {
+  if (net.isIP(hostname)) return hostname
+
+  const [address] = await dns.resolve4(hostname)
+  if (!address) {
+    throw new Error(`No IPv4 address found for ${hostname}`)
+  }
+
+  return address
+}
+
+/**
+ * Lazily builds the Gmail SMTP transport.
  *
  * Throws rather than returning null — a missing password is a deployment
  * mistake, and the only safe response is a loud one.
  */
-function getTransporter(): Transporter {
+async function getTransporter(): Promise<Transporter> {
   if (!isMailConfigured()) {
     throw new Error(
       "Mail is not configured: SMTP_USER and SMTP_PASSWORD are required to send email",
     )
   }
 
-  // `family` is honoured by Nodemailer (passed through to net.connect) but is
-  // absent from @types/nodemailer, hence the intersection rather than a cast.
-  const options: SMTPTransport.Options & { family?: number } = {
-    host: env.SMTP_HOST,
+  if (transporter) return transporter
+
+  const address = await resolveIpv4Host(env.SMTP_HOST)
+
+  const options: SMTPTransport.Options = {
+    host: address,
     port: env.SMTP_PORT,
     secure: env.SMTP_SECURE,
     auth: {
       user: env.SMTP_USER,
       pass: env.SMTP_PASSWORD,
     },
-    family: 4,
+    // Certificate is issued to the hostname, not the address we dialled.
+    tls: { servername: env.SMTP_HOST },
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,
     socketTimeout: 15_000,
   }
 
-  transporter ??= nodemailer.createTransport(options)
+  transporter = nodemailer.createTransport(options)
 
   return transporter
 }
@@ -103,7 +129,7 @@ function buildOtpMessage(code: string): { subject: string; text: string; html: s
  */
 export async function sendOtpEmail(to: string, code: string): Promise<void> {
   const { subject, text, html } = buildOtpMessage(code)
-  const mail = getTransporter()
+  const mail = await getTransporter()
 
   console.log(`[mail] Sending verification email to ${to}`)
 
@@ -116,6 +142,10 @@ export async function sendOtpEmail(to: string, code: string): Promise<void> {
       html,
     })
   } catch (error) {
+    // Drop the transport so the next attempt re-resolves: Gmail rotates its
+    // SMTP addresses, and a long-lived process must not pin a dead one.
+    resetTransporter()
+
     const reason = error instanceof Error ? error.message : "unknown error"
     console.error(`[mail] Failed to send verification email to ${to}: ${reason}`)
     throw error
