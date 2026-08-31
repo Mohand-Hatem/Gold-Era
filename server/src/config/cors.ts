@@ -5,9 +5,9 @@ import { env, isDevelopment } from "./env.js"
 /**
  * Credentialed CORS configuration (BE-002, SYS-003, ADR-008).
  *
- * The frontend and backend are different sites in production (Vercel ↔ Render),
- * so the auth cookie is `SameSite=None; Secure` and every browser request is
- * credentialed. That makes CORS a real security boundary:
+ * The frontend and backend are different sites in production (Vercel ↔ Railway),
+ * so cross-site requests require `credentials: true` and a strictly matched origin.
+ * That makes CORS a real security boundary:
  *
  *   - `credentials: true` is required for the cookie to be sent at all.
  *   - A wildcard origin is invalid with credentials, so the allow-list is

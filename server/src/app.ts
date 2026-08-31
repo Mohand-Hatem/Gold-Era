@@ -23,7 +23,7 @@ import { userRoutes } from "./modules/users/users.routes.js"
 export function createApp(): Express {
   const app = express()
 
-  // Trust the platform proxy (Render/Railway/Fly) so `Secure` cookies and
+  // Trust the platform proxy (Railway) so `Secure` cookies and
   // client IPs resolve correctly behind TLS termination.
   app.set("trust proxy", 1)
   app.disable("x-powered-by")
