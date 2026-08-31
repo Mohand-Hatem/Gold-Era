@@ -16,176 +16,235 @@ Designed with **modular monolith architecture**, end-to-end type safety, automat
 
 ## 🎯 Demo & Test Credentials (Seed Data)
 
-To allow testers, evaluators, and recruiters to easily test both **Admin** and **Standard User** experiences without registering a new account, use the following pre-seeded test credentials:
+To allow testers, evaluators, and recruiters to test both **Admin** and **Standard User** experiences immediately without creating an account:
 
 | Role | Email Address | Password | Permissions & Capabilities |
 | :--- | :--- | :--- | :--- |
-| 🛡️ **Administrator** | `admin@example.com` | `Admin123` | • Full system analytics & 30-day activity trend <br/> • User account governance & role promotions <br/> • Cascade user deletion & global file metrics <br/> • Personal storage vault & text extraction |
-| 👤 **Standard User** | *(Register instant account)* <br/> *Or create in Admin panel* | *User password* | • Personal isolated file vault (500 MB limit) <br/> • Multi-file drag & drop uploads (PDF, DOCX, CSV, images) <br/> • Automatic text extraction & deep keyword search <br/> • Custom profile image upload |
-
-> [!TIP]
-> **Database Seeding:** The seed script automatically creates the pre-verified `admin@example.com` account upon running `npm run db:seed` or deploying on Railway.
+| 🛡️ **Administrator** | `admin@example.com` | `Admin123` | • Full system analytics & 30-day activity trends <br/> • User account governance & role promotions <br/> • Cascade user deletion & global file metrics <br/> • Personal storage vault & text extraction |
+| 👤 **Standard User** | *(Register instant account)* <br/> *Or create in Admin panel* | *User password* | • Personal isolated file vault (500 MB quota) <br/> • Multi-file drag & drop uploads (PDF, DOCX, CSV, images) <br/> • Automatic text extraction & deep keyword search <br/> • Custom profile image upload |
 
 ---
 
-## ✨ Features & Capabilities
+## 1. Project Overview
 
-### 🔐 1. Authentication & Security
-- **Email Verification OTP:** 6-digit verification code with 60s cooldown timer and 5 resends/hour rate limit.
-- **Secure Session Management:** Signed JWT tokens stored in `httpOnly`, `Secure`, `SameSite` cookies with CORS protection.
-- **Role-Based Access Control (RBAC):** `ADMIN` and `USER` access guard middleware with self-demotion and self-deletion prevention (`ERR_SELF_DEMOTE`, `ERR_SELF_DELETE`).
-- **Profile Picture Upload:** Custom avatar uploading to Cloudinary with interactive camera button and avatar cache synchronization.
-
-### 📁 2. File Ingestion & Intelligent Processing
-- **Multi-File Batch Upload:** Drag-and-drop zone supporting up to 5 files per batch (max 10 MB per file).
-- **Format Validation & Magic-Byte Sniffing:** Verifies binary signatures for PDF, DOCX, CSV, JSON, TXT, MD, PNG, JPEG, and WebP to block extension spoofing.
-- **Automated Text Extraction:** Server-side parsing for PDF (`pdf-parse`), Word documents (`mammoth`), and plaintext without blocking upload completion.
-- **Remote Cloud Blob Storage:** Direct streaming to Cloudinary authenticated storage with automatic UUID generation.
-
-### 🔎 3. Deep Search, Views & Filtering
-- **Full-Text Keyword Search:** Searches both filenames AND extracted file content with a 300ms debounce.
-- **Dual View Modes:** Instant toggle between structured **Table View** and visual **Grid Card View**.
-- **Category Filter Chips:** Instant filtering across `Documents`, `Images`, `Spreadsheets / Code`, and `Archives`.
-- **Content Inspector:** Detailed file page with SHA-256 checksum, formatted metadata, zoomable image preview, and a 1-click **Copy Extracted Text** button.
-
-### 📊 4. Interactive Dashboards & Metrics
-- **Personal Storage Analytics:** Storage consumption bar with warning thresholds and category breakdown.
-- **Admin System Overview:** 30-day upload volume curves (`AreaChart`) and global asset distribution (`PieChart`) via **Recharts**.
-- **User Governance Directory:** Searchable user table with live role switcher modal and cascade deletion protection.
+Filox is an enterprise-grade SaaS file vault designed to store, manage, inspect, and extract textual content from various document formats securely:
+- **Intelligent Processing:** Server-side asynchronous text extraction from PDF (`pdf-parse`), Word (`mammoth`), and plaintext files.
+- **Deep Search:** Full-text search across filenames and inside the extracted file contents with a 300ms debounce.
+- **Dual View Modes:** Instant toggle between a tabular data grid and a card grid.
+- **Secure Authentication:** Email OTP verification, Bcrypt password hashing (cost 12), and signed JWT session cookies with CORS protection.
+- **Granular RBAC:** Role-Based Access Control protecting sensitive admin endpoints and personal file vaults.
 
 ---
 
-## 🛠️ Technology Stack
+## 2. Technologies Used
 
-```text
-Frontend:
-  ├── Framework: Next.js 16.3 (App Router with Turbopack)
-  ├── Language: TypeScript 5.9
-  ├── Styling: Tailwind CSS v4 & Lucide React
-  ├── State & Data Fetching: TanStack React Query v5 & Axios
-  └── Data Visualization: Recharts
+### Frontend:
+- **Framework:** Next.js 16.3.3 (App Router with Turbopack)
+- **Language:** TypeScript 5.9
+- **Styling:** Tailwind CSS v4 & Lucide React Icons
+- **State & Data Fetching:** TanStack React Query v5 & Axios
+- **Data Visualization:** Recharts (AreaChart, PieChart)
 
-Backend:
-  ├── Framework: Express 5.2 (Modular Monolith)
-  ├── Language: TypeScript 5.9
-  ├── Database & ORM: Prisma 6.19 & PostgreSQL
-  ├── Security: Bcrypt (12 rounds), JSONWebToken, Express Rate Limit
-  ├── Ingestion & Extraction: Multer, File-Type, pdf-parse, mammoth
-  ├── Cloud Storage: Cloudinary SDK
-  ├── Email: Nodemailer (SMTP + Console Fallback)
-  └── Test Suite: Vitest & Supertest (21 tests)
-```
+### Backend:
+- **Runtime & Framework:** Node.js (v20+ / v22) & Express 5.2 (Modular Monolith)
+- **Language:** TypeScript 5.9
+- **Database & ORM:** PostgreSQL & Prisma ORM 6.19
+- **Authentication & Security:** Bcrypt, JSONWebToken, Express Rate Limit, Cookie-Parser
+- **File Processing & Storage:** Multer, File-Type (Magic Bytes), pdf-parse, mammoth, Cloudinary SDK
+- **Email Delivery:** Nodemailer (Gmail SMTP + local console fallback)
+- **Testing:** Vitest 4.1 & Supertest
 
 ---
 
-## 🏗️ Project Architecture
+## 3. Folder Structure
 
 ```text
 Gold-Era/
-├── client/                     # Next.js 16 Frontend (Deployed on Vercel)
+├── client/                     # Next.js 16 App Router Frontend (Deployed on Vercel)
 │   ├── app/
-│   │   ├── (public)/           # Landing, Login, Register, Verify Email
+│   │   ├── (public)/           # Landing page, Login, Register, Verify-Email
 │   │   ├── (protected)/        # Dashboard, Files Explorer, File Details, Profile, Admin
-│   │   └── globals.css         # Tailwind v4 custom tokens, dark mode variants & scrollbars
+│   │   ├── globals.css         # Tailwind v4 custom theme tokens, dark mode variants & scrollbars
+│   │   └── layout.tsx          # Root HTML layout with query & auth providers
 │   ├── components/
-│   │   ├── home/               # Modular landing page sections
+│   │   ├── home/               # Modular landing page hero, features, CTA, and testimonials
 │   │   ├── layout/             # Navbar, AppHeader, AppSidebar, Footer
 │   │   ├── files/              # FileUploadModal, DeleteFileModal
-│   │   └── ui/                 # Accessible UI components (Button, Modal, Card, Badge)
-│   ├── providers/              # AuthProvider, ToastProvider, QueryProvider
-│   └── lib/                    # Axios client, utils, formatters
+│   │   └── ui/                 # Accessible UI components (Button, Modal, Card, Badge, ThemeToggle)
+│   ├── providers/              # AuthProvider, ToastProvider, QueryProvider, ThemeProvider
+│   ├── types/                  # Shared frontend API TypeScript interfaces
+│   └── lib/                    # Axios client instance and utility formatters
 │
 ├── server/                     # Express 5 REST API (Deployed on Railway)
 │   ├── prisma/
-│   │   ├── schema.prisma       # Database models (User, VerificationCode, File)
-│   │   └── seed.ts             # Idempotent admin seed script
+│   │   ├── schema.prisma       # Prisma database models (User, VerificationCode, File)
+│   │   ├── migrations/         # PostgreSQL migration history
+│   │   └── seed.ts             # Idempotent admin bootstrap seed script
 │   ├── src/
-│   │   ├── config/             # Environment validation, Prisma, CORS, Cloudinary
-│   │   ├── middleware/         # Authenticate, RBAC, Upload, RateLimit, ErrorHandler
+│   │   ├── config/             # Zod environment validation, Prisma, CORS, Cloudinary
+│   │   ├── middleware/         # Authenticate, RBAC, Upload (Multer), RateLimit, ErrorHandler
 │   │   ├── modules/
-│   │   │   ├── auth/           # Login, Register, OTP verification, Profile, Avatar
+│   │   │   ├── auth/           # Login, Register, OTP verification, Profile, Avatar upload
 │   │   │   ├── files/          # Upload, List/Search, Details, Download Stream, Delete
 │   │   │   ├── users/          # Admin user management & role changes
-│   │   │   └── stats/          # Personal & platform analytics
-│   │   ├── services/           # Token, Password, Mail, Storage, Text Extraction
-│   │   └── utils/              # AppError, Response helpers, AsyncHandler
-│   ├── tests/                  # Vitest + Supertest automated test suite
-│   ├── railway.json            # Railway deployment blueprint & health check
+│   │   │   └── stats/          # User storage & platform-wide analytics
+│   │   ├── services/           # Token, Password, Mail, Storage (Cloudinary), Text Extraction
+│   │   └── utils/              # AppError, standard API response envelopes, AsyncHandler
+│   ├── tests/                  # Automated Vitest + Supertest test suites
+│   ├── railway.json            # Railway deployment blueprint & health check configuration
 │   └── nixpacks.toml           # Nixpacks Node.js 22 + OpenSSL build recipe
-└── docs/                       # Architectural documentation package
+└── README.md                   # Project documentation
 ```
 
 ---
 
-## 🚀 Quick Start — Local Development
+## 4. Setup Instructions & Running Locally
 
-### 1. Prerequisites
+### Prerequisites
 - **Node.js**: `v20.x` or `v22.x`
-- **PostgreSQL**: Local database or [Neon](https://neon.tech) cloud PostgreSQL
+- **PostgreSQL**: Local PostgreSQL instance or a free cloud database (e.g. [Neon](https://neon.tech))
+- **Cloudinary Account**: Free Cloudinary cloud name and API keys
 
-### 2. Backend Setup
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/Mohand-Hatem/Gold-Era.git
+cd Gold-Era
+```
+
+### Step 2: Backend Setup & Launch
 ```bash
 cd server
 npm install
 
-# Create .env from template
+# Copy environment variables template
 cp .env.example .env
 
-# Run database schema push & seed admin account
+# Configure your DATABASE_URL, JWT_SECRET, and Cloudinary keys in server/.env
+
+# Run database migration and seed admin
 npx prisma db push
 npm run db:seed
 
-# Start backend development server (http://localhost:8080)
+# Start backend development server (Runs on http://localhost:8080)
 npm run dev
 ```
 
-### 3. Frontend Setup
+### Step 3: Frontend Setup & Launch
 ```bash
-# In a separate terminal
+# In a separate terminal window
 cd client
 npm install
 
-# Create .env.local
+# Copy environment variables template
 cp .env.example .env.local
 
-# Start Next.js frontend (http://localhost:3000)
+# Start Next.js development server (Runs on http://localhost:3000)
 npm run dev
 ```
 
+Visit **`http://localhost:3000`** to access the application.
+
 ---
 
-## ☁️ Deployment Instructions
+## 5. Environment Variables
 
-### 1. Backend Deployment on Railway
-1. Create a new project on [Railway](https://railway.com/) and provision a **PostgreSQL** database.
+### Frontend Variables (`client/.env.local`)
+| Variable | Description | Example / Default |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_API_URL` | Base URL of the backend REST API | `http://localhost:8080` (Local) / `https://gold-era-production.up.railway.app` (Prod) |
+
+### Backend Variables (`server/.env`)
+| Variable | Required | Description | Example / Default |
+| :--- | :---: | :--- | :--- |
+| `PORT` | No | Port on which Express listens | `8080` (Railway injects automatically) |
+| `NODE_ENV` | Yes | Environment mode | `development` / `production` |
+| `DATABASE_URL` | Yes | PostgreSQL connection string | `postgresql://user:pass@host:5432/db?sslmode=require` |
+| `JWT_SECRET` | Yes | 32+ character key for signing JWTs | `a-very-long-and-secure-random-secret-key-32` |
+| `JWT_EXPIRES_IN` | No | JWT expiration duration | `7d` |
+| `CLOUDINARY_CLOUD_NAME`| Yes | Cloudinary Cloud Name | `your_cloud_name` |
+| `CLOUDINARY_API_KEY` | Yes | Cloudinary API Key | `your_api_key` |
+| `CLOUDINARY_API_SECRET`| Yes | Cloudinary API Secret | `your_api_secret` |
+| `CLOUDINARY_FOLDER` | No | Prefix folder in Cloudinary | `filox` |
+| `FRONTEND_URL` | Yes | Origin URL of the frontend (for CORS & cookies) | `http://localhost:3000` (Local) / `https://gold-era-front.vercel.app` (Prod) |
+| `ADMIN_EMAIL` | No | Pre-seeded admin email | `admin@example.com` |
+| `ADMIN_PASSWORD` | No | Pre-seeded admin password | `Admin123` |
+| `GMAIL_USER` | No | Gmail address for OTP delivery | `your-email@gmail.com` *(Logs to console if empty)* |
+| `GMAIL_PASS` | No | Gmail 16-character App Password | `xxxx xxxx xxxx xxxx` |
+
+---
+
+## 6. Database Migration & Seeding Steps
+
+Prisma is used for schema management, migrations, and database seeding.
+
+### Apply Schema to Database:
+```bash
+cd server
+
+# In development (create and apply migration history):
+npx prisma migrate dev --name init
+
+# In production / Railway (direct push):
+npx prisma db push
+```
+
+### Seed the Default Admin Account:
+```bash
+cd server
+npm run db:seed
+```
+*Output: `[seed] admin ready: admin@example.com (ADMIN, verified=true)`*
+
+### Inspect Database with Prisma Studio:
+```bash
+cd server
+npx prisma studio
+```
+Opens interactive GUI at `http://localhost:5555` to view and manage tables.
+
+---
+
+## 7. Deployment Instructions
+
+### A. Backend Deployment (Railway)
+1. In your [Railway Dashboard](https://railway.com/), create a new project and add a **PostgreSQL** database.
 2. Link your GitHub repository (`Gold-Era`) and set the **Root Directory** to `server`.
-3. Add the required **Environment Variables** in Railway:
-   ```env
-   NODE_ENV=production
-   DATABASE_URL=${{Postgres.DATABASE_URL}}
-   JWT_SECRET=your-secure-32-character-secret-key-here
-   JWT_EXPIRES_IN=7d
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key
-   CLOUDINARY_API_SECRET=your_api_secret
-   FRONTEND_URL=https://gold-era-front.vercel.app
-   ```
-4. Railway automatically detects [`server/railway.json`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/server/railway.json), runs `npx prisma db push`, and launches the service.
+3. Add the required Environment Variables (`NODE_ENV=production`, `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `JWT_SECRET`, `CLOUDINARY_*`, `FRONTEND_URL`).
+4. Railway automatically detects [`server/railway.json`](file:///c:/Users/Mohand/Documents/GitHub/Gold-Era/server/railway.json), runs `npx prisma db push --skip-generate`, verifies `/health`, and starts the server.
 
-### 2. Frontend Deployment on Vercel
+### B. Frontend Deployment (Vercel)
 1. Import the repository into [Vercel](https://vercel.com).
-2. Set the **Root Directory** to `client`.
-3. Add the environment variable:
+2. Set the **Root Directory** to `client` and Framework Preset to `Next.js`.
+3. Add the Environment Variable:
    ```env
    NEXT_PUBLIC_API_URL=https://gold-era-production.up.railway.app
    ```
-4. Deploy!
+4. Click **Deploy**.
 
 ---
 
-## 🧪 Automated Testing
+## 8. Assumptions & Architectural Decisions
 
-Run the full backend test suite with Vitest:
+1. **Storage Quotas & Limits:**
+   * Maximum file size: **10 MB per file**.
+   * Maximum batch upload: **5 files per batch**.
+   * User storage limit: **500 MB per user vault**.
+2. **Text Extraction Pipeline:**
+   * Text extraction runs synchronously during file processing for PDF, DOCX, CSV, JSON, and TXT files, storing extracted text in PostgreSQL for full-text search.
+   * Extraction failures do not block file storage; files are still saved even if text parsing encounters complex formatting.
+3. **Security & Session Tokens:**
+   * Authentication tokens are transmitted in `httpOnly`, `SameSite=None`, `Secure` cookies to protect against Cross-Site Scripting (XSS) and token theft.
+   * Modifying user roles or deleting accounts immediately invalidates active sessions via `tokenVersion` checks.
+4. **Cloud Storage Persistence:**
+   * Files are stored as authenticated blobs in **Cloudinary** rather than local disk storage to guarantee persistence across serverless and container restarts.
+5. **Debounced Search:**
+   * The client debounces search input by **300ms** to prevent unnecessary database queries while the user is typing.
+
+---
+
+## 9. Automated Testing
+
+The backend includes a comprehensive automated test suite powered by **Vitest** and **Supertest**:
 
 ```bash
 cd server
