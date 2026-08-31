@@ -4,8 +4,6 @@ node_modules/
 .pnp.js
 
 # Environment variables — never commit real secrets
-.env
-.env.*
 !.env.example
 !.env.local.example
 
@@ -39,7 +37,6 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Editor / OS
-.vscode/*
 !.vscode/extensions.json
 .idea/
 .DS_Store
@@ -51,3 +48,4 @@ Thumbs.db
 
 # Documentation (Internal specs)
 docs/
+config.bat

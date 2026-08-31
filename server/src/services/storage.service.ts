@@ -139,6 +139,31 @@ export async function uploadBlob(
  * its opaque storage key.
  */
 /**
+ * Cloudinary's `fl_attachment:<name>` flag 400s the *entire* request if
+ * `<name>` contains almost anything besides `[A-Za-z0-9 _-]` — confirmed
+ * live, one character class at a time: a literal dot anywhere (not just a
+ * trailing extension — "Report." → 200, "Q1.2 Report" → 400), commas,
+ * colons, slashes, parentheses, and any non-ASCII character all 400 the
+ * whole request. Percent-encoding does not help (`%2E`, `%28`, `%2F` all
+ * still 400) — Cloudinary validates the raw transformation path segment
+ * before decoding it. Real filenames routinely contain several of these, so
+ * the flag value has to be reduced to that safe subset. This only affects
+ * the *suggested* filename in the browser's save dialog: the extension is
+ * stripped here because `format` (passed alongside) re-appends the correct
+ * one to `Content-Disposition` regardless (confirmed:
+ * `attachment:My Report` + `format: "png"` →
+ * `Content-Disposition: attachment; filename="My Report.png"`), and the
+ * file's actual stored bytes/extension are untouched either way.
+ */
+function sanitizeForAttachmentFlag(filename: string): string {
+  // Strip a trailing extension only (never treat "/" as a path separator —
+  // this must not silently discard everything before one).
+  const base = filename.replace(/\.[^.]+$/, "")
+  const safe = base.replace(/[^A-Za-z0-9 _-]/g, " ").replace(/\s+/g, " ").trim()
+  return safe || "download"
+}
+
+/**
  * `format`, when given, must be the extension the asset was uploaded with
  * (`signUpload`/`uploadBlob` both set it). Cloudinary's `raw` resource type
  * addresses an asset by its full path *including* the extension — a bare
@@ -158,7 +183,7 @@ export function deliveryUrlFor(
     secure: true,
     format: options.format,
     flags: options.attachmentFilename
-      ? `attachment:${options.attachmentFilename}`
+      ? `attachment:${sanitizeForAttachmentFlag(options.attachmentFilename)}`
       : undefined,
   })
 }
