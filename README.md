@@ -8,8 +8,8 @@ Developed as a comprehensive Full Stack Developer technical assessment adhering 
 
 ## 🚀 Live Deployments
 
-- **Frontend Application (Vercel):** `YOUR_FRONTEND_URL`
-- **Backend REST API (Vercel / Render):** `YOUR_BACKEND_URL`
+- **Frontend Application (Vercel):** `https://gold-era-front.vercel.app`
+- **Backend REST API (Vercel / Render):** `https://gold-era-production.up.railway.app`
 - **Default Seeded Admin Account:**
   - **Email:** `admin@example.com`
   - **Password:** `Admin123` *(Note: Change in production)*
