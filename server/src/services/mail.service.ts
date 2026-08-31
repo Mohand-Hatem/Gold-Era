@@ -1,14 +1,13 @@
 import nodemailer, { type Transporter } from "nodemailer"
 
-import { env, isProduction } from "../config/env.js"
+import { env } from "../config/env.js"
 import { OTP_TTL_MS } from "../config/constants.js"
 
 /**
  * Outbound email (BE-013, ADR-011).
  *
- * Gmail SMTP via nodemailer using an App Password. When credentials are absent
- * — the normal local-development state or default cloud deploy — the code is written
- * to the console so the verification flow remains testable and never hangs.
+ * Gmail SMTP via nodemailer using an App Password. Configured with explicit IPv4
+ * and port 465/587 to prevent IPv6 ENETUNREACH issues on cloud container runtimes (Railway/Docker).
  */
 
 const OTP_TTL_MINUTES = Math.round(OTP_TTL_MS / 60_000)
@@ -20,20 +19,24 @@ export function isMailConfigured(): boolean {
 
 let transporter: Transporter | null = null
 
-/** Lazily builds the SMTP transport with strict timeouts so it never hangs. */
+/** Lazily builds the SMTP transport forced to IPv4 so Railway/Docker never hits IPv6 ENETUNREACH. */
 function getTransporter(): Transporter | null {
   if (!isMailConfigured()) return null
 
   transporter ??= nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
     auth: {
       user: env.GMAIL_USER,
       pass: env.GMAIL_PASS,
     },
-    connectionTimeout: 4000, // 4s timeout
-    greetingTimeout: 4000,
-    socketTimeout: 5000,
-  })
+    // Force IPv4 resolution to prevent ENETUNREACH on Railway
+    family: 4,
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 10000,
+  } as any)
 
   return transporter
 }
@@ -87,7 +90,7 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
       text,
       html,
     })
-    console.log(`[mail] verification code sent successfully to ${to}`)
+    console.log(`[mail] verification code sent successfully via SMTP to ${to}`)
     return true
   } catch (error) {
     console.error(`[mail] failed to send verification code via SMTP to ${to}:`, error)
