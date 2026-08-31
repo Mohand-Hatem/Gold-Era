@@ -35,14 +35,14 @@ import { Badge, FileTypeBadge } from "@/components/ui/Badge";
 import { DeleteFileModal } from "@/components/files/DeleteFileModal";
 import { formatBytes, formatDateTime } from "@/lib/utils";
 import { useToast } from "@/providers/ToastProvider";
-import api from "@/lib/axios";
+import api, { getFileDownloadUrl } from "@/lib/axios";
 import type { ApiResponse, FileItem } from "@/types/api";
 
 export default function FileDetailsPage() {
   const params = useParams<{ id: string }>();
   const fileId = params?.id;
   const router = useRouter();
-  const { success } = useToast();
+  const { success, error } = useToast();
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -70,40 +70,38 @@ export default function FileDetailsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = async (disposition: "inline" | "attachment") => {
+  /**
+   * Points the browser directly at the API's download endpoint instead of
+   * fetching bytes through axios (see lib/axios.ts `getFileDownloadUrl` for
+   * why — the endpoint 302-redirects to Cloudinary, and a credentialed
+   * XHR/fetch that follows a cross-origin redirect gets blocked by CORS on
+   * the far side; a passive resource load or navigation does not).
+   */
+  const handleDownload = (disposition: "inline" | "attachment") => {
     if (!file) return;
-    try {
-      setIsLoadingPreview(true);
-      const response = await api.get(
-        `/files/${file.id}/download?disposition=${disposition}`,
-        {
-          responseType: "blob",
-        },
-      );
-      const url = window.URL.createObjectURL(
-        new Blob([response.data], { type: file.mimeType }),
-      );
+    const url = getFileDownloadUrl(file.id, disposition);
 
-      if (disposition === "inline") {
-        if (isImage) {
-          setImagePreviewUrl(url);
-        } else {
-          window.open(url, "_blank");
-        }
+    if (disposition === "inline") {
+      if (isImage) {
+        setIsLoadingPreview(true);
+        setImagePreviewUrl(url);
       } else {
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", file.originalName);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        window.open(url, "_blank", "noopener,noreferrer");
       }
-      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
-    } catch (err) {
-      console.error("Download failed:", err);
-    } finally {
-      setIsLoadingPreview(false);
+      return;
     }
+
+    // Cloudinary already sets `Content-Disposition: attachment; filename=...`
+    // server-side (ADR-044), so the browser downloads in place under the
+    // original filename without navigating away — the `download` attribute
+    // isn't load-bearing for a cross-origin URL, but costs nothing to keep.
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.originalName;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   if (isLoading) {
@@ -349,6 +347,12 @@ export default function FileDetailsPage() {
                         src={imagePreviewUrl}
                         alt={file.originalName}
                         className="max-h-100 w-auto object-contain rounded-lg"
+                        onLoad={() => setIsLoadingPreview(false)}
+                        onError={() => {
+                          setIsLoadingPreview(false);
+                          setImagePreviewUrl(null);
+                          error("Failed to load image preview.", "Preview Failed");
+                        }}
                       />
                     </div>
                   ) : (

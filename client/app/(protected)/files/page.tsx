@@ -32,7 +32,7 @@ import { EmptyState, Skeleton } from "@/components/ui/EmptyState"
 import { FileUploadModal } from "@/components/files/FileUploadModal"
 import { DeleteFileModal } from "@/components/files/DeleteFileModal"
 import { formatBytes, formatDate } from "@/lib/utils"
-import api from "@/lib/axios"
+import api, { getFileDownloadUrl } from "@/lib/axios"
 import type { ApiResponse, FileCategory, FileItem } from "@/types/api"
 import { useToast } from "@/providers/ToastProvider"
 
@@ -96,22 +96,21 @@ export default function MyFilesPage() {
     return <Archive className={`${sizeClass} text-blue-500 shrink-0`} />
   }
 
-  const handleDownload = async (file: FileItem) => {
-    try {
-      const response = await api.get(`/files/${file.id}/download?disposition=attachment`, {
-        responseType: "blob",
-      })
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement("a")
-      link.href = url
-      link.setAttribute("download", file.originalName)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      setTimeout(() => window.URL.revokeObjectURL(url), 10000)
-    } catch (err) {
-      console.error("Download failed:", err)
-    }
+  /**
+   * Points the browser directly at the API's download endpoint rather than
+   * fetching bytes through axios — see lib/axios.ts `getFileDownloadUrl`.
+   * The endpoint 302-redirects to Cloudinary (ADR-044); a credentialed
+   * XHR/fetch following that redirect gets blocked by CORS on the far side,
+   * but a plain navigation is not subject to CORS at all.
+   */
+  const handleDownload = (file: FileItem) => {
+    const link = document.createElement("a")
+    link.href = getFileDownloadUrl(file.id, "attachment")
+    link.download = file.originalName
+    link.rel = "noopener"
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
   }
 
   const handleCopyLink = (file: FileItem) => {
