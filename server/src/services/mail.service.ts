@@ -7,16 +7,21 @@ import { OTP_TTL_MS } from "../config/constants.js"
  * Outbound email delivery (BE-013, ADR-011).
  *
  * Supports:
- * 1. Resend REST API (Recommended for Railway/Vercel/Cloud — uses HTTPS port 443 with 100% cloud delivery).
- * 2. Gmail SMTP via Nodemailer (Port 587 STARTTLS).
- * 3. Terminal/Console Fallback (Logs verification code for zero-setup local testing).
+ * 1. Brevo REST API (HTTPS port 443 — Sends real emails to ANY registered address without domain verification).
+ * 2. Resend REST API (HTTPS port 443).
+ * 3. Gmail SMTP via Nodemailer (Port 587 STARTTLS).
+ * 4. Terminal/Console Fallback (Logs code to Railway console for zero-delay development).
  */
 
 const OTP_TTL_MINUTES = Math.round(OTP_TTL_MS / 60_000)
 
-/** True when either Resend or Gmail credentials are configured. */
+/** True when any email provider is configured. */
 export function isMailConfigured(): boolean {
-  return Boolean(env.RESEND_API_KEY || (env.GMAIL_USER && env.GMAIL_PASS))
+  return Boolean(
+    env.BREVO_API_KEY ||
+      env.RESEND_API_KEY ||
+      (env.GMAIL_USER && env.GMAIL_PASS),
+  )
 }
 
 let transporter: Transporter | null = null
@@ -28,13 +33,13 @@ function getTransporter(): Transporter | null {
   transporter ??= nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,
-    secure: false, // Port 587 uses STARTTLS
+    secure: false,
     requireTLS: true,
     auth: {
       user: env.GMAIL_USER,
       pass: env.GMAIL_PASS,
     },
-    family: 4, // Force IPv4
+    family: 4,
     connectionTimeout: 8000,
     greetingTimeout: 8000,
     socketTimeout: 10000,
@@ -63,7 +68,7 @@ function buildOtpMessage(code: string): { subject: string; text: string; html: s
     '<h2 style="color:#0f172a;margin-bottom:8px;font-size:22px">Welcome to Filox</h2>',
     '<p style="color:#64748b;font-size:14px;margin-bottom:16px">Enter the following 6-digit verification code to activate your account:</p>',
     `<div style="font-size:36px;font-weight:800;letter-spacing:8px;color:#2563eb;padding:18px;background-color:#eff6ff;border-radius:12px;text-align:center;font-family:monospace">${code}</div>`,
-    `<p style="color:#64748b;font-size:12px;margin-top:16px">⏳ This code expires in <strong>${OTP_TTL_MINUTES} minutes</strong>.</p>`,
+    `<p style="color:#64748b;font-size:12px;margin-top:16px">This code expires in <strong>${OTP_TTL_MINUTES} minutes</strong>.</p>`,
     '<p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #f1f5f9;padding-top:12px">If you did not create a Filox account, you can safely ignore this email.</p>',
     "</div>",
   ].join("")
@@ -71,7 +76,36 @@ function buildOtpMessage(code: string): { subject: string; text: string; html: s
   return { subject, text, html }
 }
 
-/** Sends an email via Resend HTTPS API (never blocked by cloud firewalls). */
+/** Sends an email via Brevo REST API (Sends to ANY email address in the world over HTTPS). */
+async function sendViaBrevo(to: string, subject: string, text: string, html: string): Promise<boolean> {
+  const senderEmail = env.BREVO_SENDER_EMAIL || env.GMAIL_USER || "filox.vault@gmail.com"
+  const senderName = env.BREVO_SENDER_NAME || "Filox Vault"
+
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "api-key": env.BREVO_API_KEY as string,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      sender: { name: senderName, email: senderEmail },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+      textContent: text,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.text()
+    throw new Error(`Brevo API HTTP ${response.status}: ${errorBody}`)
+  }
+
+  return true
+}
+
+/** Sends an email via Resend HTTPS API. */
 async function sendViaResend(to: string, subject: string, text: string, html: string): Promise<boolean> {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -97,19 +131,29 @@ async function sendViaResend(to: string, subject: string, text: string, html: st
 }
 
 /**
- * Sends a verification code.
- *
- * Returns `true` when sent successfully, `false` when it failed or was
- * only logged. Callers treat the result as advisory, not as a reason to fail.
+ * Sends a verification code to the registered email address.
  */
 export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
   const { subject, text, html } = buildOtpMessage(code)
 
-  // 1. Prioritize Resend HTTPS API if configured (Recommended for Railway/Vercel)
+  // 1. Brevo HTTPS API (Best for sending to ANY registered email address)
+  if (env.BREVO_API_KEY) {
+    try {
+      await sendViaBrevo(to, subject, text, html)
+      console.log(`[mail] verification code sent successfully via Brevo to ${to}`)
+      return true
+    } catch (error) {
+      console.error(`[mail] failed to send verification code via Brevo to ${to}:`, error)
+      console.log(`[mail] FALLBACK — verification code for ${to}: ${code}`)
+      return false
+    }
+  }
+
+  // 2. Resend HTTPS API
   if (env.RESEND_API_KEY) {
     try {
       await sendViaResend(to, subject, text, html)
-      console.log(`[mail] verification code sent successfully via Resend HTTPS API to ${to}`)
+      console.log(`[mail] verification code sent successfully via Resend to ${to}`)
       return true
     } catch (error) {
       console.error(`[mail] failed to send verification code via Resend to ${to}:`, error)
@@ -118,7 +162,7 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
     }
   }
 
-  // 2. Secondary: Gmail SMTP via Nodemailer
+  // 3. Gmail SMTP via Nodemailer
   const mail = getTransporter()
   if (mail) {
     try {
@@ -138,7 +182,7 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
     }
   }
 
-  // 3. Console fallback
-  console.log(`[mail] SMTP/Resend not configured — verification code for ${to}: ${code}`)
+  // 4. Fallback console log
+  console.log(`[mail] SMTP/Brevo/Resend not configured — verification code for ${to}: ${code}`)
   return false
 }

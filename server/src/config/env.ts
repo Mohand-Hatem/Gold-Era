@@ -36,7 +36,11 @@ const envSchema = z.object({
   ADMIN_PASSWORD: z.string().min(8).default("Admin123"),
 
   // ── Email / OTP delivery (consumed from Phase 4) ────────────────────────
-  // Supports Resend HTTPS API (recommended for Railway/Cloud) and Gmail SMTP.
+  // Supports Brevo HTTPS API (sends to ANY email without domain verification),
+  // Resend HTTPS API, and Gmail SMTP.
+  BREVO_API_KEY: z.string().optional(),
+  BREVO_SENDER_EMAIL: z.string().optional(),
+  BREVO_SENDER_NAME: z.string().optional().default("Filox Vault"),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM: z.string().optional().default("Filox Vault <onboarding@resend.dev>"),
   GMAIL_USER: z.string().optional(),
