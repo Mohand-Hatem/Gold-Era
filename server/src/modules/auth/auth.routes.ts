@@ -12,9 +12,15 @@ import {
   verifyEmailSchema,
 } from "./auth.schemas.js"
 
+// Avatars stay multipart-through-the-function (unlike the files module, see
+// files.schemas.ts): a profile picture doesn't justify the direct-upload
+// machinery. 4 MB keeps every request under Vercel's 4.5 MB function body
+// cap with headroom for the rest of the multipart envelope.
+const AVATAR_MAX_SIZE_BYTES = 4 * 1024 * 1024
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: { fileSize: AVATAR_MAX_SIZE_BYTES },
 })
 
 /**

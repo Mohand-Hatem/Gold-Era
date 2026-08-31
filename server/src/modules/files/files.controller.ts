@@ -2,7 +2,13 @@ import type { Request, Response } from "express"
 
 import { AppError } from "../../utils/AppError.js"
 import { ok, okPaginated } from "../../utils/response.js"
-import type { DownloadQuery, FileIdParam, ListFilesQuery } from "./files.schemas.js"
+import type {
+  ConfirmUploadsInput,
+  DownloadQuery,
+  FileIdParam,
+  ListFilesQuery,
+  RequestUploadSignaturesInput,
+} from "./files.schemas.js"
 import { filesService } from "./files.service.js"
 
 /**
@@ -10,16 +16,33 @@ import { filesService } from "./files.service.js"
  */
 export const filesController = {
   /**
-   * POST /api/files/upload
+   * POST /api/files/upload-signature
+   *
+   * First step of the direct-to-Cloudinary upload flow (docs/24, Vercel
+   * migration): declares intent to upload and receives a signature per file.
    */
-  async upload(req: Request, res: Response): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/require-await -- asyncHandler requires a Promise-returning signature
+  async uploadSignature(req: Request, res: Response): Promise<void> {
     if (!req.user) {
       throw AppError.unauthenticated()
     }
 
-    const files = (req.files as Express.Multer.File[]) || []
-    const outcome = await filesService.uploadFiles(req.user, files)
+    const result = filesService.createUploadSignatures(req.body as RequestUploadSignaturesInput)
+    ok(res, result, 201)
+  },
 
+  /**
+   * POST /api/files/confirm
+   *
+   * Second step: the client has finished uploading directly to Cloudinary
+   * and hands back the storage keys for validation and persistence.
+   */
+  async confirmUpload(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      throw AppError.unauthenticated()
+    }
+
+    const outcome = await filesService.confirmUploads(req.user, req.body as ConfirmUploadsInput)
     ok(res, outcome, 201)
   },
 
@@ -53,6 +76,10 @@ export const filesController = {
 
   /**
    * GET /api/files/:id/download
+   *
+   * Redirects to the Cloudinary delivery URL rather than streaming bytes
+   * through this API — see `filesService.downloadFile` for why (Vercel
+   * migration: response bodies are capped at 4.5 MB).
    */
   async download(req: Request, res: Response): Promise<void> {
     if (!req.user) {
@@ -62,19 +89,9 @@ export const filesController = {
     const { id } = req.params as unknown as FileIdParam
     const { disposition } = (req.query as unknown) as DownloadQuery
 
-    const { stream, mimeType, originalName, size } =
-      await filesService.downloadFile(req.user, id)
+    const { url } = await filesService.downloadFile(req.user, id, disposition)
 
-    const filenameHeader = encodeURIComponent(originalName)
-
-    res.setHeader("Content-Type", mimeType)
-    res.setHeader("Content-Length", size)
-    res.setHeader(
-      "Content-Disposition",
-      `${disposition === "attachment" ? "attachment" : "inline"}; filename*=UTF-8''${filenameHeader}`,
-    )
-
-    stream.pipe(res)
+    res.redirect(302, url)
   },
 
   /**

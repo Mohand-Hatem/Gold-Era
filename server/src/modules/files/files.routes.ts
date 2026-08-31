@@ -1,14 +1,15 @@
 import { Router } from "express"
 
 import { authenticate } from "../../middleware/authenticate.js"
-import { uploadFiles } from "../../middleware/upload.js"
 import { validate } from "../../middleware/validate.js"
 import { asyncHandler } from "../../utils/asyncHandler.js"
 import { filesController } from "./files.controller.js"
 import {
+  confirmUploadsSchema,
   downloadQuerySchema,
   fileIdParamSchema,
   listFilesQuerySchema,
+  requestUploadSignaturesSchema,
 } from "./files.schemas.js"
 
 const router = Router()
@@ -19,13 +20,27 @@ const router = Router()
 router.use(authenticate)
 
 /**
- * POST /api/files/upload
- * Multipart file upload (1–5 files, <=10MB per file)
+ * POST /api/files/upload-signature
+ * Step 1 of the direct-to-Cloudinary upload flow (1–5 files, <=10MB per
+ * file): declare intent, get a signature per file. Bytes never pass through
+ * this API — Vercel Functions cap request bodies at 4.5 MB, well under the
+ * 10 MB per-file limit (ADR-002).
  */
 router.post(
-  "/upload",
-  uploadFiles,
-  asyncHandler(filesController.upload),
+  "/upload-signature",
+  validate({ body: requestUploadSignaturesSchema }),
+  asyncHandler(filesController.uploadSignature),
+)
+
+/**
+ * POST /api/files/confirm
+ * Step 2: the browser has uploaded directly to Cloudinary; validate the
+ * real bytes and persist the file records.
+ */
+router.post(
+  "/confirm",
+  validate({ body: confirmUploadsSchema }),
+  asyncHandler(filesController.confirmUpload),
 )
 
 /**

@@ -25,6 +25,71 @@ export function resourceTypeFor(mimeType: string): StorageResourceType {
   return mimeType.startsWith("image/") ? "image" : "raw"
 }
 
+export interface UploadSignature {
+  storageKey: string
+  resourceType: StorageResourceType
+  timestamp: number
+  signature: string
+  apiKey: string
+  cloudName: string
+  format?: string
+  uploadUrl: string
+}
+
+/**
+ * Produces a Cloudinary signature for a direct browser-to-Cloudinary upload
+ * (ADR-011 follow-up, Vercel migration).
+ *
+ * Vercel Functions cap request bodies at 4.5 MB, which is below the 10 MB
+ * per-file limit (ADR-002). Routing bytes through the function is no longer
+ * possible, so the browser uploads straight to Cloudinary instead, using a
+ * short-lived signature scoped to a server-chosen `public_id`. The client
+ * cannot alter a signed parameter without invalidating the signature, so this
+ * grants upload of exactly one object at exactly the path the server names —
+ * nothing else.
+ *
+ * The uploaded blob is not yet a `File` row and is not validated against real
+ * bytes at this point (extension/MIME allowlist and magic-byte sniffing still
+ * require the actual content, which is fetched back and checked in
+ * `confirmUploads`, see files.service.ts). Until that check passes, an
+ * unvalidated blob can exist in Cloudinary with no corresponding database
+ * record, and is therefore unreachable through the API.
+ */
+export function signUpload(extension: string, mimeType: string): UploadSignature {
+  const resourceType = resourceTypeFor(mimeType)
+  const sanitizedExt = extension.replace(/^\./, "")
+  const storageKey = `${env.CLOUDINARY_FOLDER}/${randomUUID()}`
+  const timestamp = Math.floor(Date.now() / 1000)
+
+  // Every parameter the client sends (besides file, cloud_name, resource_type,
+  // api_key, signature) must be included here, or Cloudinary rejects the
+  // signature as a mismatch.
+  const paramsToSign: Record<string, string | number> = {
+    public_id: storageKey,
+    timestamp,
+    type: "upload",
+  }
+  if (sanitizedExt) {
+    paramsToSign.format = sanitizedExt
+  }
+
+  const signature = cloudinary.utils.api_sign_request(
+    paramsToSign,
+    env.CLOUDINARY_API_SECRET,
+  )
+
+  return {
+    storageKey,
+    resourceType,
+    timestamp,
+    signature,
+    apiKey: env.CLOUDINARY_API_KEY,
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
+    format: sanitizedExt || undefined,
+    uploadUrl: `https://api.cloudinary.com/v1_1/${env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,
+  }
+}
+
 /** Uploads a buffer to Cloudinary and returns its storage key and secure URL. */
 export async function uploadBlob(
   buffer: Buffer,
@@ -67,17 +132,35 @@ export async function uploadBlob(
 }
 
 /**
+ * Builds the public Cloudinary delivery URL for a stored blob.
+ *
+ * `attachmentFilename`, when given, adds Cloudinary's `fl_attachment:<name>`
+ * flag so the browser downloads under the file's original name instead of
+ * its opaque storage key.
+ */
+export function deliveryUrlFor(
+  storageKey: string,
+  resourceType: StorageResourceType,
+  options: { attachmentFilename?: string } = {},
+): string {
+  return cloudinary.url(storageKey, {
+    resource_type: resourceType,
+    type: "upload",
+    secure: true,
+    flags: options.attachmentFilename
+      ? `attachment:${options.attachmentFilename}`
+      : undefined,
+  })
+}
+
+/**
  * Opens a readable stream for a stored blob from Cloudinary.
  */
 export async function streamBlob(
   storageKey: string,
   resourceType: StorageResourceType,
 ): Promise<{ stream: Readable; contentType: string | null; contentLength: string | null }> {
-  const url = cloudinary.url(storageKey, {
-    resource_type: resourceType,
-    type: "upload",
-    secure: true,
-  })
+  const url = deliveryUrlFor(storageKey, resourceType)
 
   const response = await fetch(url)
 
@@ -91,6 +174,30 @@ export async function streamBlob(
     contentType: response.headers.get("content-type"),
     contentLength: response.headers.get("content-length"),
   }
+}
+
+/**
+ * Fetches a stored blob's full contents into memory.
+ *
+ * Used to validate a directly-uploaded blob against its real bytes
+ * (`confirmUploads` in files.service.ts) — magic-byte sniffing and text
+ * extraction both need the complete buffer, and there is no smaller check
+ * that would substitute for it.
+ */
+export async function fetchBlobBuffer(
+  storageKey: string,
+  resourceType: StorageResourceType,
+): Promise<Buffer> {
+  const url = deliveryUrlFor(storageKey, resourceType)
+
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    console.error(`[storage] fetch failed for ${storageKey} (${url}): status ${response.status}`)
+    throw AppError.notFound("ERR_FILE_NOT_FOUND", "Uploaded file could not be retrieved from storage provider")
+  }
+
+  return Buffer.from(await response.arrayBuffer())
 }
 
 /** Deletes a stored blob from Cloudinary. */

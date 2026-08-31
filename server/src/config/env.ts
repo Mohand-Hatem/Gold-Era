@@ -4,8 +4,10 @@ import { z } from "zod"
  * Typed, validated environment configuration (BE-001).
  *
  * Validation happens once at import time. If a required variable is missing or
- * malformed the process exits immediately rather than starting in a broken
- * state — see docs/06 NFR-011 and docs/25 §3.
+ * malformed, the process exits immediately rather than starting in a broken
+ * state — see docs/06 NFR-011 and docs/25 §3. On Vercel it throws instead of
+ * exiting, since `process.exit` in a serverless function kills the invocation
+ * without a clean error surface; Vercel reports the thrown error normally.
  *
  * Every variable and its purpose is documented in docs/25-Environment-Variables.md.
  */
@@ -106,12 +108,26 @@ function loadEnv(): Env {
   const parsed = configSchema.safeParse(process.env)
 
   if (!parsed.success) {
-    console.error("\n[config] Invalid environment configuration:\n")
-    for (const issue of parsed.error.issues) {
-      const variable = issue.path.join(".") || "(root)"
-      console.error(`  - ${variable}: ${issue.message}`)
+    const lines = [
+      "",
+      "[config] Invalid environment configuration:",
+      "",
+      ...parsed.error.issues.map((issue) => `  - ${issue.path.join(".") || "(root)"}: ${issue.message}`),
+      "",
+      "See server/.env.example and docs/25-Environment-Variables.md",
+      "",
+    ]
+    console.error(lines.join("\n"))
+
+    // On Vercel, `process.exit` kills the function invocation with no useful
+    // surface for the caller (no response, no clean log line). Throwing lets
+    // the platform report it as a normal invocation failure. Locally and on
+    // any long-running host, exiting immediately is still preferable: it
+    // fails the deploy loudly instead of accepting traffic in a broken state.
+    if (process.env.VERCEL) {
+      throw new Error("Invalid environment configuration — see logs above")
     }
-    console.error("\nSee server/.env.example and docs/25-Environment-Variables.md\n")
+
     process.exit(1)
   }
 

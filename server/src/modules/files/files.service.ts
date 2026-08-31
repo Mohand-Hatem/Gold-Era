@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto"
-import { Readable } from "node:stream"
 
 import { Role, type File } from "@prisma/client"
 
@@ -10,10 +9,12 @@ import {
 } from "../../config/constants.js"
 import { extractContent } from "../../services/extraction.service.js"
 import {
+  deliveryUrlFor,
+  fetchBlobBuffer,
   removeBlob,
   resourceTypeFor,
-  streamBlob,
-  uploadBlob,
+  signUpload,
+  type UploadSignature,
 } from "../../services/storage.service.js"
 import { AppError } from "../../utils/AppError.js"
 import { categorizeMimeType } from "../../utils/categorize.js"
@@ -21,12 +22,16 @@ import {
   extractExtension,
   sanitizeFilename,
 } from "../../utils/sanitizeFilename.js"
-import type { ListFilesQuery } from "./files.schemas.js"
+import type { ConfirmUploadsInput, ListFilesQuery, RequestUploadSignaturesInput } from "./files.schemas.js"
 import { filesRepository, type FileWithOwner } from "./files.repository.js"
 
 export interface UploadOutcome {
   uploaded: File[]
   failed: Array<{ originalName: string; reason: string }>
+}
+
+export interface FileUploadSignature extends UploadSignature {
+  originalName: string
 }
 
 export interface PaginatedFilesResponse {
@@ -39,11 +44,8 @@ export interface PaginatedFilesResponse {
   }
 }
 
-export interface StreamedFileDownload {
-  stream: Readable
-  mimeType: string
-  originalName: string
-  size: number
+export interface ResolvedFileDownload {
+  url: string
 }
 
 const allowedExtensions = new Set<string>(ALLOWED_EXTENSIONS)
@@ -99,96 +101,148 @@ async function validateMagicBytes(
 
 export const filesService = {
   /**
-   * Processes multipart upload batch (BE-023, ADR-002, ADR-003, ADR-039).
+   * Issues Cloudinary upload signatures for a declared batch (ADR-002,
+   * Vercel migration — see storage.service.ts `signUpload` for why this
+   * exists).
+   *
+   * The allowlist and size cap are enforced here, against the *declared*
+   * name/MIME/size, before any signature is handed out — a request naming an
+   * unsupported type never gets a storage key. This is a first filter, not
+   * the authoritative check: the declared values are re-verified against the
+   * real bytes in `confirmUploads` once the upload completes.
    */
-  async uploadFiles(
-    user: { id: string; role: Role },
-    files: Express.Multer.File[],
-  ): Promise<UploadOutcome> {
-    if (!files || files.length === 0) {
-      throw AppError.badRequest("ERR_VALIDATION", "No files uploaded")
+  createUploadSignatures(
+    input: RequestUploadSignaturesInput,
+  ): { signatures: FileUploadSignature[] } {
+    const failures: Array<{ field: string; message: string }> = []
+
+    const signatures = input.files.map((file) => {
+      const extension = extractExtension(file.originalName)
+
+      if (!extension || !allowedExtensions.has(extension)) {
+        failures.push({
+          field: file.originalName,
+          message: `Extension .${extension || "unknown"} is not supported`,
+        })
+      } else if (!allowedMimeTypes.has(file.mimeType)) {
+        failures.push({
+          field: file.originalName,
+          message: `Content type ${file.mimeType} is not supported`,
+        })
+      }
+
+      const signature = signUpload(extension ?? "", file.mimeType)
+      return { ...signature, originalName: file.originalName }
+    })
+
+    if (failures.length > 0) {
+      throw AppError.validation(failures, "One or more files are not supported")
     }
 
+    return { signatures }
+  },
+
+  /**
+   * Validates and persists files already uploaded directly to Cloudinary
+   * (ADR-002, ADR-003, ADR-039, Vercel migration).
+   *
+   * Mirrors the checks the previous multipart path ran against
+   * `file.buffer` — magic bytes, checksum, extraction — but the buffer now
+   * comes from fetching the blob back from Cloudinary, since bytes never
+   * passed through this function. A failure at any step removes the blob so
+   * nothing unvalidated is left reachable.
+   */
+  async confirmUploads(
+    user: { id: string; role: Role },
+    input: ConfirmUploadsInput,
+  ): Promise<UploadOutcome> {
     const uploaded: File[] = []
     const failed: Array<{ originalName: string; reason: string }> = []
 
-    for (const file of files) {
-      const originalName = file.originalname || "unnamed"
+    for (const declared of input.files) {
+      const originalName = declared.originalName || "unnamed"
+      const resourceType = resourceTypeFor(declared.mimeType)
 
-      // 1. Reject 0-byte files (ADR-042)
-      if (!file.size || file.size === 0) {
-        failed.push({
-          originalName,
-          reason: "Empty file (0 bytes) is not allowed",
-        })
-        continue
-      }
-
-      // 2. Extension & MIME allowlist check
+      // 1. Extension & MIME allowlist check (re-verified; the signature step
+      // already checked this, but never trust a value round-tripped through
+      // the client).
       const extension = extractExtension(originalName)
       if (!extension || !allowedExtensions.has(extension)) {
         failed.push({
           originalName,
           reason: `Extension .${extension || "unknown"} is not supported`,
         })
+        await removeBlob(declared.storageKey, resourceType).catch(() => {})
         continue
       }
 
-      if (!allowedMimeTypes.has(file.mimetype)) {
+      if (!allowedMimeTypes.has(declared.mimeType)) {
         failed.push({
           originalName,
-          reason: `Content type ${file.mimetype} is not supported`,
+          reason: `Content type ${declared.mimeType} is not supported`,
+        })
+        await removeBlob(declared.storageKey, resourceType).catch(() => {})
+        continue
+      }
+
+      // 2. Fetch the real bytes back from Cloudinary
+      let buffer: Buffer
+      try {
+        buffer = await fetchBlobBuffer(declared.storageKey, resourceType)
+      } catch (fetchErr) {
+        console.error(`[upload] failed to retrieve ${originalName} from storage:`, fetchErr)
+        failed.push({
+          originalName,
+          reason: "Could not retrieve uploaded file from storage provider",
         })
         continue
       }
 
-      // 3. Magic-byte verification (ADR-003)
+      // 3. Reject 0-byte files (ADR-042)
+      if (buffer.length === 0) {
+        failed.push({
+          originalName,
+          reason: "Empty file (0 bytes) is not allowed",
+        })
+        await removeBlob(declared.storageKey, resourceType).catch(() => {})
+        continue
+      }
+
+      // 4. Magic-byte verification (ADR-003)
       const isSignatureValid = await validateMagicBytes(
-        file.buffer,
+        buffer,
         extension,
-        file.mimetype,
+        declared.mimeType,
       )
       if (!isSignatureValid) {
         failed.push({
           originalName,
-          reason: `File content signature does not match declared type ${file.mimetype}`,
+          reason: `File content signature does not match declared type ${declared.mimeType}`,
         })
+        await removeBlob(declared.storageKey, resourceType).catch(() => {})
         continue
       }
 
-      // 4. SHA-256 Checksum (ADR-015)
-      const checksum = createHash("sha256").update(file.buffer).digest("hex")
+      // 5. SHA-256 Checksum (ADR-015)
+      const checksum = createHash("sha256").update(buffer).digest("hex")
 
-      // 5. Content Extraction (ADR-005, ADR-006)
-      const extraction = await extractContent(file.buffer, file.mimetype)
+      // 6. Content Extraction (ADR-005, ADR-006)
+      const extraction = await extractContent(buffer, declared.mimeType)
 
-      // 6. Category derivation & Name sanitization
-      const category = categorizeMimeType(file.mimetype)
+      // 7. Category derivation & Name sanitization
+      const category = categorizeMimeType(declared.mimeType)
       const sanitizedName = sanitizeFilename(originalName)
-
-      // 7. Store Blob in Cloudinary (ADR-039)
-      let storedBlob
-      try {
-        storedBlob = await uploadBlob(file.buffer, extension, file.mimetype)
-      } catch (uploadErr) {
-        console.error(`[upload] Cloudinary upload failed for ${originalName}:`, uploadErr)
-        failed.push({
-          originalName,
-          reason: "Failed to persist file in storage provider",
-        })
-        continue
-      }
 
       // 8. Persist Database Record (with rollback if DB write fails)
       try {
         const record = await filesRepository.createFile({
           ownerId: user.id,
           originalName: sanitizedName,
-          storageKey: storedBlob.storageKey,
-          mimeType: file.mimetype,
+          storageKey: declared.storageKey,
+          mimeType: declared.mimeType,
           category,
           extension,
-          size: file.size,
+          size: buffer.length,
           checksum,
           extractedContent: extraction.content,
           extractionStatus: extraction.status,
@@ -196,8 +250,7 @@ export const filesService = {
         uploaded.push(record)
       } catch (dbErr) {
         console.error(`[upload] DB persistence failed for ${originalName}:`, dbErr)
-        // Clean up orphaned storage blob
-        await removeBlob(storedBlob.storageKey, storedBlob.resourceType).catch(() => {})
+        await removeBlob(declared.storageKey, resourceType).catch(() => {})
         failed.push({
           originalName,
           reason: "Database error while saving file record",
@@ -205,7 +258,6 @@ export const filesService = {
       }
     }
 
-    // If all files in the batch failed validation, respond with an error
     if (uploaded.length === 0 && failed.length > 0) {
       throw new AppError(
         "ERR_UPLOAD_FAILED",
@@ -283,12 +335,22 @@ export const filesService = {
   },
 
   /**
-   * Streams file content for authenticated download/preview (BE-027, ADR-023).
+   * Authorizes a download/preview and resolves the delivery URL to redirect
+   * to (BE-027, ADR-023, Vercel migration).
+   *
+   * Previously streamed blob bytes back through this API. Vercel Functions
+   * cap response bodies at 4.5 MB, so any file larger than that would fail
+   * mid-download; redirecting the browser straight to Cloudinary has no such
+   * limit. This does not meaningfully weaken access control: blobs are
+   * already stored as `type: "upload"` (public delivery URLs), so the
+   * ownership check below has always gated *discovering* the URL, not
+   * fetching it once known.
    */
   async downloadFile(
     user: { id: string; role: Role },
     fileId: string,
-  ): Promise<StreamedFileDownload> {
+    disposition: "inline" | "attachment",
+  ): Promise<ResolvedFileDownload> {
     const file = await filesRepository.findFileById(fileId)
 
     if (!file) {
@@ -303,14 +365,11 @@ export const filesService = {
     }
 
     const resourceType = resourceTypeFor(file.mimeType)
-    const { stream } = await streamBlob(file.storageKey, resourceType)
+    const url = deliveryUrlFor(file.storageKey, resourceType, {
+      attachmentFilename: disposition === "attachment" ? file.originalName : undefined,
+    })
 
-    return {
-      stream,
-      mimeType: file.mimeType,
-      originalName: file.originalName,
-      size: file.size,
-    }
+    return { url }
   },
 
   /**

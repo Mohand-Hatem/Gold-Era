@@ -36,8 +36,22 @@ describe("Files Module & Sanitization", () => {
       expect(res.body.error.code).toBe("ERR_UNAUTHENTICATED")
     })
 
-    it("POST /api/files/upload rejects unauthenticated upload with 401", async () => {
-      const res = await request(app).post("/api/files/upload")
+    it("POST /api/files/upload-signature rejects unauthenticated request with 401", async () => {
+      const res = await request(app).post("/api/files/upload-signature")
+      expect(res.status).toBe(401)
+      expect(res.body.success).toBe(false)
+      expect(res.body.error.code).toBe("ERR_UNAUTHENTICATED")
+    })
+
+    it("POST /api/files/confirm rejects unauthenticated request with 401", async () => {
+      const res = await request(app).post("/api/files/confirm")
+      expect(res.status).toBe(401)
+      expect(res.body.success).toBe(false)
+      expect(res.body.error.code).toBe("ERR_UNAUTHENTICATED")
+    })
+
+    it("GET /api/files/:id/download rejects unauthenticated request with 401", async () => {
+      const res = await request(app).get("/api/files/some-file-id/download")
       expect(res.status).toBe(401)
       expect(res.body.success).toBe(false)
       expect(res.body.error.code).toBe("ERR_UNAUTHENTICATED")

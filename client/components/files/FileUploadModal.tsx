@@ -2,6 +2,7 @@
 
 import React, { useCallback, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import rawAxios from "axios"
 import {
   UploadCloud,
   X,
@@ -40,6 +41,18 @@ const ALLOWED_EXTENSIONS = [
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10 MB per file (ADR-002)
 const MAX_FILES_PER_BATCH = 5 // (ADR-002)
+
+interface UploadSignature {
+  storageKey: string
+  resourceType: "image" | "raw"
+  timestamp: number
+  signature: string
+  apiKey: string
+  cloudName: string
+  format?: string
+  uploadUrl: string
+  originalName: string
+}
 
 export function FileUploadModal({ isOpen, onClose }: FileUploadModalProps) {
   const queryClient = useQueryClient()
@@ -139,38 +152,116 @@ export function FileUploadModal({ isOpen, onClose }: FileUploadModalProps) {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
+  /**
+   * Uploads directly to Cloudinary rather than through our own API (docs/24,
+   * Vercel migration): the API now runs as a Vercel Function, which caps
+   * request bodies at 4.5 MB — below the 10 MB per-file limit this modal
+   * already enforces above. The flow becomes three steps instead of one:
+   *
+   *   1. POST /files/upload-signature — declare what we intend to upload;
+   *      get back a signed, single-use Cloudinary upload slot per file.
+   *   2. PUT the bytes straight to Cloudinary using that signature. Never
+   *      touches our API, so the 4.5 MB cap doesn't apply.
+   *   3. POST /files/confirm — the server fetches each blob back from
+   *      Cloudinary, validates the real bytes (magic-byte check, checksum,
+   *      extraction), and only then creates the database record.
+   *
+   * Each file's own upload progress is tracked separately and averaged, so
+   * the bar still reflects real progress across the batch rather than
+   * jumping in three big steps.
+   */
   const handleUpload = async () => {
     if (selectedFiles.length === 0 || isUploading) return
 
     setIsUploading(true)
-    setUploadProgress(20)
+    setUploadProgress(0)
 
-    const formData = new FormData()
-    selectedFiles.forEach((file) => {
-      formData.append("files", file)
-    })
+    const filesToUpload = selectedFiles
 
     try {
-      setUploadProgress(50)
-      const res = await api.post<ApiResponse<{ uploaded: FileItem[]; failed: Array<{ originalName: string; reason: string }> }>>(
-        "/files/upload",
-        formData,
+      // Step 1 — request a signature per file.
+      const signatureRes = await api.post<ApiResponse<{ signatures: UploadSignature[] }>>(
+        "/files/upload-signature",
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const pct = Math.round((progressEvent.loaded * 90) / progressEvent.total)
-              setUploadProgress(pct)
-            }
-          },
+          files: filesToUpload.map((file) => ({
+            originalName: file.name,
+            mimeType: file.type || "application/octet-stream",
+            size: file.size,
+          })),
         },
       )
+      const signatures = signatureRes.data.data.signatures
+
+      // Step 2 — upload each file straight to Cloudinary in parallel,
+      // tracking per-file progress for a combined percentage.
+      const progressByFile = new Array<number>(filesToUpload.length).fill(0)
+      const reportProgress = () => {
+        const total = progressByFile.reduce((sum, pct) => sum + pct, 0)
+        // Reserve the last 15% for the confirm step below.
+        setUploadProgress(Math.round((total / filesToUpload.length) * 0.85))
+      }
+
+      const cloudinaryOutcomes = await Promise.allSettled(
+        filesToUpload.map(async (file, index) => {
+          const sig = signatures[index]
+          if (!sig) throw new Error("No upload signature returned for this file")
+
+          const form = new FormData()
+          form.append("file", file)
+          form.append("api_key", sig.apiKey)
+          form.append("timestamp", String(sig.timestamp))
+          form.append("public_id", sig.storageKey)
+          form.append("type", "upload")
+          if (sig.format) form.append("format", sig.format)
+          form.append("signature", sig.signature)
+
+          // A bare axios instance: this goes to api.cloudinary.com, not our
+          // API, so none of our baseURL/credentials/JSON defaults apply.
+          await rawAxios.post(sig.uploadUrl, form, {
+            onUploadProgress: (progressEvent) => {
+              if (progressEvent.total) {
+                progressByFile[index] = (progressEvent.loaded / progressEvent.total) * 100
+                reportProgress()
+              }
+            },
+          })
+
+          return { storageKey: sig.storageKey, originalName: file.name, mimeType: file.type || "application/octet-stream" }
+        }),
+      )
+
+      const confirmable: Array<{ storageKey: string; originalName: string; mimeType: string }> = []
+      const clientFailures: Array<{ originalName: string; reason: string }> = []
+
+      cloudinaryOutcomes.forEach((outcome, index) => {
+        if (outcome.status === "fulfilled") {
+          confirmable.push(outcome.value)
+        } else {
+          clientFailures.push({
+            originalName: filesToUpload[index]?.name ?? "unknown file",
+            reason: "Upload to storage provider failed",
+          })
+        }
+      })
+
+      setUploadProgress(90)
+
+      // Step 3 — hand the server the storage keys it needs to validate the
+      // real bytes and persist the records.
+      let uploaded: FileItem[] = []
+      let serverFailures: Array<{ originalName: string; reason: string }> = []
+
+      if (confirmable.length > 0) {
+        const confirmRes = await api.post<
+          ApiResponse<{ uploaded: FileItem[]; failed: Array<{ originalName: string; reason: string }> }>
+        >("/files/confirm", { files: confirmable })
+        uploaded = confirmRes.data.data.uploaded
+        serverFailures = confirmRes.data.data.failed ?? []
+      }
 
       setUploadProgress(100)
 
-      const { uploaded, failed } = res.data.data
+      const failed = [...clientFailures, ...serverFailures]
 
       if (uploaded.length > 0) {
         success(
@@ -181,7 +272,7 @@ export function FileUploadModal({ isOpen, onClose }: FileUploadModalProps) {
         queryClient.invalidateQueries({ queryKey: ["stats"] })
       }
 
-      if (failed && failed.length > 0) {
+      if (failed.length > 0) {
         failed.forEach((f) => {
           error(`${f.originalName}: ${f.reason}`, "Upload Warning")
         })

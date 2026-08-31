@@ -38,8 +38,8 @@ export default function ProfilePage() {
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      error("Profile picture size must be less than 5 MB", "File Too Large")
+    if (file.size > 4 * 1024 * 1024) {
+      error("Profile picture size must be less than 4 MB", "File Too Large")
       return
     }
 
