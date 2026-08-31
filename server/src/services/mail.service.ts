@@ -6,8 +6,8 @@ import { OTP_TTL_MS } from "../config/constants.js"
 /**
  * Outbound email (BE-013, ADR-011).
  *
- * Gmail SMTP via nodemailer using an App Password. Configured with explicit IPv4
- * and port 465/587 to prevent IPv6 ENETUNREACH issues on cloud container runtimes (Railway/Docker).
+ * Gmail SMTP via nodemailer using an App Password. Configured on port 587 (STARTTLS)
+ * with explicit IPv4 family to pass through cloud provider egress firewalls (Railway/AWS/Docker).
  */
 
 const OTP_TTL_MINUTES = Math.round(OTP_TTL_MS / 60_000)
@@ -19,23 +19,27 @@ export function isMailConfigured(): boolean {
 
 let transporter: Transporter | null = null
 
-/** Lazily builds the SMTP transport forced to IPv4 so Railway/Docker never hits IPv6 ENETUNREACH. */
+/** Lazily builds the SMTP transport using port 587 STARTTLS and IPv4 for cloud compatibility. */
 function getTransporter(): Transporter | null {
   if (!isMailConfigured()) return null
 
   transporter ??= nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, // Port 587 uses STARTTLS
+    requireTLS: true,
     auth: {
       user: env.GMAIL_USER,
       pass: env.GMAIL_PASS,
     },
-    // Force IPv4 resolution to prevent ENETUNREACH on Railway
-    family: 4,
-    connectionTimeout: 8000,
-    greetingTimeout: 8000,
-    socketTimeout: 10000,
+    family: 4, // Force IPv4
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    tls: {
+      ciphers: "SSLv3",
+      rejectUnauthorized: false,
+    },
   } as any)
 
   return transporter
