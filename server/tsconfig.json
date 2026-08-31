@@ -20,7 +20,12 @@
     "skipLibCheck": true,
 
     "sourceMap": true,
-    "declaration": false,
+    // Vercel type-checks `api/index.ts` (which imports `../dist/app.js`)
+    // before bundling it. Without a declaration file for `dist/app.js`,
+    // strict mode's noImplicitAny turns that import into a build failure
+    // (TS7016). Emitting .d.ts files gives that check something to resolve —
+    // ADR-043.
+    "declaration": true,
     "removeComments": false
   },
   "include": ["src/**/*.ts"],
