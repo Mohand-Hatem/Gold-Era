@@ -188,7 +188,7 @@ export const filesService = {
       // 2. Fetch the real bytes back from Cloudinary
       let buffer: Buffer
       try {
-        buffer = await fetchBlobBuffer(declared.storageKey, resourceType)
+        buffer = await fetchBlobBuffer(declared.storageKey, resourceType, extension)
       } catch (fetchErr) {
         console.error(`[upload] failed to retrieve ${originalName} from storage:`, fetchErr)
         failed.push({
@@ -367,6 +367,7 @@ export const filesService = {
     const resourceType = resourceTypeFor(file.mimeType)
     const url = deliveryUrlFor(file.storageKey, resourceType, {
       attachmentFilename: disposition === "attachment" ? file.originalName : undefined,
+      format: file.extension,
     })
 
     return { url }

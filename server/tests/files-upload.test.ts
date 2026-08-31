@@ -97,7 +97,7 @@ describe("confirmUploads", () => {
       files: [{ storageKey: "filox/abc", originalName: "notes.txt", mimeType: "text/plain" }],
     })
 
-    expect(fetchBlobBuffer).toHaveBeenCalledWith("filox/abc", "raw")
+    expect(fetchBlobBuffer).toHaveBeenCalledWith("filox/abc", "raw", "txt")
     expect(repo.createFile).toHaveBeenCalledTimes(1)
     const persisted = repo.createFile.mock.calls[0]![0]
     expect(persisted.ownerId).toBe(USER.id)
@@ -162,6 +162,7 @@ describe("downloadFile — redirect instead of streaming (Vercel: 4.5 MB respons
     storageKey: "filox/big-file",
     mimeType: "application/pdf",
     originalName: "quarterly-report.pdf",
+    extension: "pdf",
   }
 
   beforeEach(() => {
@@ -173,6 +174,7 @@ describe("downloadFile — redirect instead of streaming (Vercel: 4.5 MB respons
 
     expect(deliveryUrlFor).toHaveBeenCalledWith("filox/big-file", "raw", {
       attachmentFilename: undefined,
+      format: "pdf",
     })
     expect(result.url).toContain("cloudinary.com")
   })
@@ -182,7 +184,19 @@ describe("downloadFile — redirect instead of streaming (Vercel: 4.5 MB respons
 
     expect(deliveryUrlFor).toHaveBeenCalledWith("filox/big-file", "raw", {
       attachmentFilename: "quarterly-report.pdf",
+      format: "pdf",
     })
+  })
+
+  it("passes the stored extension as the delivery format — a bare public_id 404s for raw resources that were uploaded with a format", async () => {
+    // Regression: Cloudinary's `raw` resource type addresses an asset by its
+    // full path including the extension it was uploaded with. Omitting
+    // `format` here reproduced a real production 404 on every non-image
+    // download.
+    await filesService.downloadFile(USER, "file_1", "inline")
+
+    const options = deliveryUrlFor.mock.calls[0]![2] as Record<string, unknown>
+    expect(options.format).toBe("pdf")
   })
 
   it("still enforces ownership before resolving a URL", async () => {

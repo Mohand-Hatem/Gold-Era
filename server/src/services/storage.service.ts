@@ -138,42 +138,29 @@ export async function uploadBlob(
  * flag so the browser downloads under the file's original name instead of
  * its opaque storage key.
  */
+/**
+ * `format`, when given, must be the extension the asset was uploaded with
+ * (`signUpload`/`uploadBlob` both set it). Cloudinary's `raw` resource type
+ * addresses an asset by its full path *including* the extension — a bare
+ * `public_id` 404s for a raw upload that was given a `format` at upload
+ * time, even though the identical bare-`public_id` URL works for `image`
+ * resources. Always passing `format` through keeps both resource types
+ * addressed consistently and avoids relying on that asymmetry.
+ */
 export function deliveryUrlFor(
   storageKey: string,
   resourceType: StorageResourceType,
-  options: { attachmentFilename?: string } = {},
+  options: { attachmentFilename?: string; format?: string } = {},
 ): string {
   return cloudinary.url(storageKey, {
     resource_type: resourceType,
     type: "upload",
     secure: true,
+    format: options.format,
     flags: options.attachmentFilename
       ? `attachment:${options.attachmentFilename}`
       : undefined,
   })
-}
-
-/**
- * Opens a readable stream for a stored blob from Cloudinary.
- */
-export async function streamBlob(
-  storageKey: string,
-  resourceType: StorageResourceType,
-): Promise<{ stream: Readable; contentType: string | null; contentLength: string | null }> {
-  const url = deliveryUrlFor(storageKey, resourceType)
-
-  const response = await fetch(url)
-
-  if (!response.ok || !response.body) {
-    console.error(`[storage] fetch failed for ${storageKey} (${url}): status ${response.status}`)
-    throw AppError.notFound("ERR_FILE_NOT_FOUND", "Stored file is no longer available in storage provider")
-  }
-
-  return {
-    stream: Readable.fromWeb(response.body as Parameters<typeof Readable.fromWeb>[0]),
-    contentType: response.headers.get("content-type"),
-    contentLength: response.headers.get("content-length"),
-  }
 }
 
 /**
@@ -187,8 +174,9 @@ export async function streamBlob(
 export async function fetchBlobBuffer(
   storageKey: string,
   resourceType: StorageResourceType,
+  format?: string,
 ): Promise<Buffer> {
-  const url = deliveryUrlFor(storageKey, resourceType)
+  const url = deliveryUrlFor(storageKey, resourceType, { format })
 
   const response = await fetch(url)
 
