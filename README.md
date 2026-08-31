@@ -9,8 +9,8 @@ Designed with **modular monolith architecture**, end-to-end type safety, automat
 ## 🌐 Live Deployments
 
 - **Frontend Application (Vercel):** [https://gold-era-front.vercel.app](https://gold-era-front.vercel.app)
-- **Backend REST API (Vercel Functions):** `https://<your-backend-project>.vercel.app` — replace once the backend project is created (ADR-043; migrated off Railway because Railway's outbound SMTP is Pro-plan-and-above only, which blocked Gmail SMTP delivery).
-- **API Health Probe:** `https://<your-backend-project>.vercel.app/health`
+- **Backend REST API (Vercel Functions):** [https://gold-era-backend.vercel.app](https://gold-era-backend.vercel.app) — migrated off Railway (ADR-043) because Railway's outbound SMTP is Pro-plan-and-above only, which blocked Gmail SMTP delivery.
+- **API Health Probe:** [https://gold-era-backend.vercel.app/health](https://gold-era-backend.vercel.app/health)
 
 ---
 
@@ -154,7 +154,7 @@ Visit **`http://localhost:3000`** to access the application.
 ### Frontend Variables (`client/.env.local`)
 | Variable | Description | Example / Default |
 | :--- | :--- | :--- |
-| `NEXT_PUBLIC_API_URL` | Base URL of the backend REST API | `http://localhost:8080` (Local) / `https://<your-backend-project>.vercel.app` (Prod) |
+| `NEXT_PUBLIC_API_URL` | Base URL of the backend REST API | `http://localhost:8080` (Local) / `https://gold-era-backend.vercel.app` (Prod) |
 
 ### Backend Variables (`server/.env`)
 | Variable | Required | Description | Example / Default |
@@ -263,7 +263,7 @@ Opens interactive GUI at `http://localhost:5555` to view and manage tables.
 2. Set the **Root Directory** to `client` and Framework Preset to `Next.js`.
 3. Add the Environment Variable, pointing at the backend project from step A:
    ```env
-   NEXT_PUBLIC_API_URL=https://<your-backend-project>.vercel.app
+   NEXT_PUBLIC_API_URL=https://gold-era-backend.vercel.app
    ```
 4. Click **Deploy**.
 
@@ -284,6 +284,8 @@ Opens interactive GUI at `http://localhost:5555` to view and manage tables.
 4. **Cloud Storage Persistence:**
    * Files are stored in **Cloudinary** rather than local disk storage to guarantee persistence across serverless and container restarts.
    * Uploads go directly from the browser to Cloudinary using a server-issued signature, and downloads redirect to Cloudinary's delivery URL rather than passing through the API (ADR-043/044) — required once the API moved to Vercel Functions, which cap request/response bodies at 4.5 MB. Assets are public-but-unguessable (`type: "upload"`), so access control is enforced by never handing out a URL to anyone but the file's owner (or an admin), not by Cloudinary-side authentication.
+   * Non-image files (PDF, DOCX, CSV, JSON, TXT, MD) are stored as Cloudinary's `raw` resource type, which is addressed by its full path **including the file extension** once uploaded with an explicit format — delivery URLs must include that extension or the asset 404s even though it exists.
+   * **Assumption / known account requirement:** Cloudinary's default "Restricted media types" security setting blocks public delivery of PDF and ZIP specifically (confirmed: `.docx`/`.csv`/`.json`/`.md`/`.txt` all deliver `200`, `.pdf`/`.zip` return `401` until this is changed). A Cloudinary account used for this app must have PDF/ZIP delivery explicitly enabled under **Console → Settings → Security → Restricted media types** — otherwise every PDF upload succeeds but every PDF download/preview fails.
 5. **Debounced Search:**
    * The client debounces search input by **300ms** to prevent unnecessary database queries while the user is typing.
 6. **Email Delivery Has No Fallback:**
