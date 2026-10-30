@@ -42,7 +42,7 @@
     "file-type": "^22.0.2",
     "jsonwebtoken": "^9.0.3",
     "mammoth": "^1.12.2",
-    "multer": "^2.3.0",
+    "multer": "^2.5.0",
     "nodemailer": "^9.0.6",
     "pdf-parse": "^1.1.4",
     "prisma": "6.19.3",
